@@ -181,14 +181,14 @@ export default function CashierTab({
       {/* Cashier Menu Headers */}
       <div id="cashier-main-card" className="bg-[#0e1216] border border-[#1a222a] rounded-2xl overflow-hidden flex flex-col">
         {/* Sub Navigation Tabs */}
-        <div id="cashier-tab-header" className="flex items-center justify-between border-b border-[#1a222a] px-4 pt-1 bg-[#0a0d10]">
-          <div id="cashier-tab-group" className="flex items-center gap-1.5">
+        <div id="cashier-tab-header" className="flex items-center justify-between border-b border-[#1a222a] px-4 py-2 bg-[#0a0d10]">
+          <div id="cashier-tab-group" className="flex items-center gap-2">
             <button
               id="subtab-deposit"
               onClick={() => { setActiveSubTab('deposit'); setErrorMessage(null); setSuccessMessage(null); }}
-              className={`px-4 py-3 text-xs md:text-sm font-sans font-bold border-b-2 transition-all cursor-pointer ${
+              className={`px-4 py-3 text-sm md:text-base font-sans font-black border-b-2 transition-all cursor-pointer ${
                 activeSubTab === 'deposit' 
-                  ? 'border-amber-400 text-amber-400' 
+                  ? 'border-blue-500 text-blue-400 font-extrabold select-none scale-105' 
                   : 'border-transparent text-gray-400 hover:text-white'
               }`}
             >
@@ -197,9 +197,9 @@ export default function CashierTab({
             <button
               id="subtab-withdraw"
               onClick={() => { setActiveSubTab('withdraw'); setErrorMessage(null); setSuccessMessage(null); }}
-              className={`px-4 py-3 text-xs md:text-sm font-sans font-bold border-b-2 transition-all cursor-pointer ${
+              className={`px-4 py-3 text-sm md:text-base font-sans font-black border-b-2 transition-all cursor-pointer ${
                 activeSubTab === 'withdraw' 
-                  ? 'border-amber-400 text-amber-400' 
+                  ? 'border-blue-500 text-blue-400 font-extrabold select-none scale-105' 
                   : 'border-transparent text-gray-400 hover:text-white'
               }`}
             >
@@ -208,9 +208,9 @@ export default function CashierTab({
             <button
               id="subtab-history"
               onClick={() => { setActiveSubTab('history'); setErrorMessage(null); setSuccessMessage(null); }}
-              className={`px-4 py-3 text-xs md:text-sm font-sans font-bold border-b-2 transition-all cursor-pointer ${
+              className={`px-4 py-3 text-sm md:text-base font-sans font-black border-b-2 transition-all cursor-pointer ${
                 activeSubTab === 'history' 
-                  ? 'border-amber-400 text-amber-400' 
+                  ? 'border-blue-500 text-blue-400 font-extrabold select-none scale-105' 
                   : 'border-transparent text-gray-400 hover:text-white'
               }`}
             >
@@ -218,8 +218,8 @@ export default function CashierTab({
             </button>
           </div>
 
-          <div id="cashier-balance-card" className="font-mono text-xs text-amber-400 font-semibold px-3 py-1 bg-amber-400/10 rounded-lg flex items-center gap-1">
-            <Wallet size={12} />
+          <div id="cashier-balance-card" className="font-sans text-sm md:text-base text-blue-400 font-black px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center gap-2 shadow-[0_0_12px_rgba(59,130,246,0.1)]">
+            <Wallet size={14} className="text-blue-400" />
             <span>Balance: ${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
@@ -252,17 +252,21 @@ export default function CashierTab({
                 type="button"
                 className={`flex items-center gap-3.5 p-3.5 rounded-xl border transition-all text-left group cursor-pointer ${
                   payMethod === 'mpesa' 
-                    ? 'bg-amber-400/5 border-amber-400 text-amber-400 shadow-md' 
+                    ? 'bg-blue-500/5 border-blue-500 text-blue-400 shadow-lg shadow-blue-500/10' 
                     : 'bg-[#151c22]/50 border-[#222e38] text-gray-300 hover:bg-[#1a232b] hover:text-white'
                 }`}
               >
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold ${
-                  payMethod === 'mpesa' ? 'bg-amber-400/20 text-amber-400' : 'bg-slate-800 text-gray-400 group-hover:text-amber-400'
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
+                  payMethod === 'mpesa' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-gray-400 group-hover:text-blue-400'
                 }`}>
-                  <Smartphone size={18} />
+                  <Smartphone size={20} />
                 </div>
                 <div className="flex flex-col">
-                  <span id="gateway-mpesa-title" className="text-xs font-bold font-sans">M-PESA Gateways</span>
+                  <span id="gateway-mpesa-title" className={`font-sans font-black ${
+                    payMethod === 'mpesa' ? 'text-blue-400 text-sm md:text-base' : 'text-gray-200 text-xs md:text-sm'
+                  }`}>
+                    M-PESA Gateways
+                  </span>
                   <span id="gateway-mpesa-desc" className="text-[10px] text-gray-400 font-mono mt-0.5">Instant • Min K$300 • Max $130,000</span>
                 </div>
               </button>
@@ -273,17 +277,21 @@ export default function CashierTab({
                 type="button"
                 className={`flex items-center gap-3.5 p-3.5 rounded-xl border transition-all text-left group cursor-pointer ${
                   payMethod === 'card' 
-                    ? 'bg-amber-400/5 border-amber-400 text-amber-400 shadow-md' 
+                    ? 'bg-blue-500/5 border-blue-500 text-blue-400 shadow-lg shadow-blue-500/10' 
                     : 'bg-[#151c22]/50 border-[#222e38] text-gray-300 hover:bg-[#1a232b] hover:text-white'
                 }`}
               >
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold ${
-                  payMethod === 'card' ? 'bg-amber-400/20 text-amber-400' : 'bg-slate-800 text-gray-400 group-hover:text-amber-400'
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
+                  payMethod === 'card' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-gray-400 group-hover:text-blue-400'
                 }`}>
-                  <CreditCard size={18} />
+                  <CreditCard size={20} />
                 </div>
                 <div className="flex flex-col">
-                  <span id="gateway-card-title" className="text-xs font-bold font-sans">Visa / Mastercard</span>
+                  <span id="gateway-card-title" className={`font-sans font-black ${
+                    payMethod === 'card' ? 'text-blue-400 text-sm md:text-base' : 'text-gray-200 text-xs md:text-sm'
+                  }`}>
+                    Visa / Mastercard
+                  </span>
                   <span id="gateway-card-desc" className="text-[10px] text-gray-400 font-mono mt-0.5">Instant Credit • Secure PCI DSS</span>
                 </div>
               </button>
@@ -294,17 +302,21 @@ export default function CashierTab({
                 type="button"
                 className={`flex items-center gap-3.5 p-3.5 rounded-xl border transition-all text-left group cursor-pointer ${
                   payMethod === 'crypto' 
-                    ? 'bg-amber-400/5 border-amber-400 text-amber-400 shadow-md' 
+                    ? 'bg-blue-500/5 border-blue-500 text-blue-400 shadow-lg shadow-blue-500/10' 
                     : 'bg-[#151c22]/50 border-[#222e38] text-gray-300 hover:bg-[#1a232b] hover:text-white'
                 }`}
               >
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold ${
-                  payMethod === 'crypto' ? 'bg-amber-400/20 text-amber-400' : 'bg-slate-800 text-gray-400 group-hover:text-amber-400'
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
+                  payMethod === 'crypto' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-gray-400 group-hover:text-blue-400'
                 }`}>
-                  <Wallet size={18} />
+                  <Wallet size={20} />
                 </div>
                 <div className="flex flex-col">
-                  <span id="gateway-crypto-title" className="text-xs font-bold font-sans">USDT / Crypto Ledger</span>
+                  <span id="gateway-crypto-title" className={`font-sans font-black ${
+                    payMethod === 'crypto' ? 'text-blue-400 text-sm md:text-base' : 'text-gray-200 text-xs md:text-sm'
+                  }`}>
+                    USDT / Crypto Ledger
+                  </span>
                   <span id="gateway-crypto-desc" className="text-[10px] text-gray-400 font-mono mt-0.5">Direct Binance Pay & ERC-20/TRC-20</span>
                 </div>
               </button>
