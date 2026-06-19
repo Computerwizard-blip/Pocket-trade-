@@ -583,6 +583,27 @@ export default function App() {
     return () => clearInterval(copyTimer);
   }, [topTraders, assets, isDemo]);
 
+  // Handle clicking outside of any asset dropdown triggers or list containers to auto-close
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!showAssetSelector) return;
+      const target = e.target as HTMLElement;
+      
+      const insideDesktopTrigger = target.closest("#asset-dropdown-trigger");
+      const insideMobileTrigger = target.closest("#mobile-asset-dropdown-trigger");
+      const insideDesktopDropdown = target.closest("#assets-registry-dropdown");
+      const insideMobileDropdown = target.closest("#assets-registry-dropdown-mobile");
+      
+      if (!insideDesktopTrigger && !insideMobileTrigger && !insideDesktopDropdown && !insideMobileDropdown) {
+        setShowAssetSelector(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showAssetSelector]);
+
   // Placement executor handler
   const handlePlaceTrade = (
     type: "up" | "down",
@@ -655,12 +676,12 @@ export default function App() {
             {/* Left/Middle Column - Asset Ticker + Chart + Status Ledger panels */}
             <div
               id="left-workspace-column"
-              className="flex-1 flex flex-col gap-4 min-h-[450px]"
+              className={`flex-1 flex flex-col gap-4 min-h-[450px] relative transition-all ${showAssetSelector ? "z-40" : "z-10"}`}
             >
               {/* Asset choice row */}
               <div
                 id="asset-selection-hud"
-                className="relative flex items-center justify-between bg-white/5 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-2xl shrink-0 shadow"
+                className={`relative flex items-center justify-between bg-white/5 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-2xl shrink-0 shadow transition-all ${showAssetSelector ? "z-[100]" : "z-20"}`}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-slate-300 font-sans">
@@ -669,7 +690,12 @@ export default function App() {
                   <button
                     id="asset-dropdown-trigger"
                     data-test="ok"
-                    onClick={() => setShowAssetSelector(!showAssetSelector)}
+                    onClick={() => {
+                      if (!showAssetSelector) {
+                        setSelectedAssetCategory(activeAsset.type || "all");
+                      }
+                      setShowAssetSelector(!showAssetSelector);
+                    }}
                     className="bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-xl text-xs font-sans font-bold text-white flex items-center gap-2 hover:bg-white/10 transition-all cursor-pointer select-none"
                   >
                     <div className="flex items-center gap-1.5">
@@ -730,7 +756,7 @@ export default function App() {
                 {showAssetSelector && (
                   <div
                     id="assets-registry-dropdown"
-                    className="absolute top-12 left-2 w-[345px] md:w-[420px] bg-[#0c101b]/98 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] z-40 overflow-hidden py-1 animate-fade-in divide-y divide-white/5 font-sans"
+                    className="absolute top-12 left-2 w-[345px] md:w-[420px] bg-[#0c101b]/98 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] z-[9999] overflow-hidden py-1 animate-fade-in divide-y divide-white/5 font-sans"
                   >
                     {/* Category Switcher Row */}
                     <div className="px-2 py-1.5 bg-[#0a0d17] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
@@ -1093,11 +1119,9 @@ export default function App() {
                     <span className="font-mono font-bold text-slate-400 min-w-[20px]">
                       #{trader.rank}
                     </span>
-                    <img
-                      src={trader.avatarUrl}
-                      alt=""
-                      className="w-8 h-8 rounded-full object-cover border border-white/10"
-                    />
+                    <div className="w-8 h-8 rounded-full bg-black border border-white/10 flex items-center justify-center text-slate-400 select-none">
+                      <Users size={12} className="text-slate-500" />
+                    </div>
                     <div className="flex flex-col">
                       <span className="font-sans font-medium text-slate-200">
                         {trader.name}
@@ -1423,7 +1447,13 @@ export default function App() {
 
               <button
                 type="button"
-                onClick={() => setShowAssetSelector(!showAssetSelector)}
+                id="mobile-asset-dropdown-trigger"
+                onClick={() => {
+                  if (!showAssetSelector) {
+                    setSelectedAssetCategory(activeAsset.type || "all");
+                  }
+                  setShowAssetSelector(!showAssetSelector);
+                }}
                 className="flex items-center gap-1.5 ml-2 py-1 px-2 rounded-xl bg-blue-500/15 border border-blue-500/25 cursor-pointer active:scale-95 hover:bg-blue-500/20 transition-all text-left truncate max-w-[155px]"
               >
                 {renderAssetIcon(activeAsset.id)}

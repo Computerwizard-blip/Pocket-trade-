@@ -93,17 +93,10 @@ export default function CopyTradingTab({ topTraders, onToggleCopy }: CopyTrading
                   </span>
 
                   {/* Avatar wrapper */}
-                  <div className="relative">
-                    <img 
-                      src={trader.avatarUrl} 
-                      alt={trader.name} 
-                      onError={(e) => {
-                        // fallback placeholder if unsplash fails
-                        e.currentTarget.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${trader.name}`;
-                      }}
-                      className="w-11 h-11 rounded-full object-cover border-2 border-[#1f2a36] group-hover:border-amber-400/40 transition-colors"
-                      referrerPolicy="no-referrer"
-                    />
+                  <div className="relative select-none shrink-0">
+                    <div className="w-11 h-11 rounded-full bg-black border-2 border-slate-800 flex items-center justify-center text-slate-300 group-hover:border-amber-400/40 transition-all shadow-inner">
+                      <Users size={16} className="text-slate-400 group-hover:text-amber-400 transition-colors" />
+                    </div>
                     <span className="absolute -bottom-1 -right-1 px-1 py-0.5 rounded text-[8px] bg-slate-900 border border-[#1f2a37] font-bold text-white font-mono uppercase">
                       {trader.country}
                     </span>

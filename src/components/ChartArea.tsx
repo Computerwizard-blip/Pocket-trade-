@@ -41,6 +41,15 @@ export default function ChartArea({
   const [showEMA, setShowEMA] = useState<boolean>(false);
   const [showRSI, setShowRSI] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const candleCacheRef = useRef<{
+    assetId: string;
+    timeframe: string;
+    cache: Map<number, { open: number; close: number; high: number; low: number; isGreen: boolean; candleId: number }>;
+  }>({
+    assetId: '',
+    timeframe: '',
+    cache: new Map()
+  });
   const [containerSize, setContainerSize] = useState({ width: 800, height: 430 });
   const [hoveredCoords, setHoveredCoords] = useState<{ x: number, y: number, price: number } | null>(null);
   const [secondsCountdown, setSecondsCountdown] = useState<number>(56);
@@ -139,22 +148,53 @@ export default function ChartArea({
   const sec = secondsPerCandle[timeframe] || 30;
 
   // Group our current 1s tick history into chronological segments matching candlestick durations
-  // Align from index 0 forward so previously completed candles remain fully static, and only the last one moves up/down.
-  const liveChunks: number[][] = [];
-  for (let j = 0; j < prices.length; j += sec) {
-    const chunk = prices.slice(j, j + sec);
-    if (chunk.length > 0) {
-      liveChunks.push(chunk);
-    }
+  // Align to absolute candle IDs based on Epoch time so previously completed candles remain fully static and only the last one moves.
+
+  // Reset cache if active asset or timeframe changed
+  if (candleCacheRef.current.assetId !== activeAsset.id || candleCacheRef.current.timeframe !== timeframe) {
+    candleCacheRef.current = {
+      assetId: activeAsset.id,
+      timeframe: timeframe,
+      cache: new Map()
+    };
   }
 
+  const currentSec = Math.floor(Date.now() / 1000);
+  const groupedCandlesMap = new Map<number, number[]>();
+
+  for (let k = 0; k < prices.length; k++) {
+    const tickTime = currentSec - (prices.length - 1 - k);
+    const candleId = Math.floor(tickTime / sec);
+    if (!groupedCandlesMap.has(candleId)) {
+      groupedCandlesMap.set(candleId, []);
+    }
+    groupedCandlesMap.get(candleId)!.push(prices[k]);
+  }
+
+  const sortedLiveCandleIds = Array.from(groupedCandlesMap.keys()).sort((a, b) => a - b);
+  const activeCandleId = sortedLiveCandleIds[sortedLiveCandleIds.length - 1] || Math.floor(currentSec / sec);
+  const cache = candleCacheRef.current.cache;
+
   // Create highly responsive Candlesticks from live ticks 
-  const liveCandles: { open: number; close: number; high: number; low: number; isGreen: boolean }[] = [];
-  for (let i = 0; i < liveChunks.length; i++) {
-    const chunk = liveChunks[i];
+  const liveCandles: { open: number; close: number; high: number; low: number; isGreen: boolean; candleId: number }[] = [];
+  for (let i = 0; i < sortedLiveCandleIds.length; i++) {
+    const cid = sortedLiveCandleIds[i];
+    const chunk = groupedCandlesMap.get(cid)!;
     
+    // If we already have computed this completed candle, fetch it directly to remain perfectly static!
+    if (cache.has(cid)) {
+      liveCandles.push(cache.get(cid)!);
+      continue;
+    }
+
     // Connect open of each candle perfectly with the close of previous candle for seamless alignment
-    const open = i > 0 ? liveCandles[i - 1].close : chunk[0];
+    let open = chunk[0];
+    if (i > 0) {
+      open = liveCandles[i - 1].close;
+    } else if (cache.has(cid - 1)) {
+      open = cache.get(cid - 1)!.close;
+    }
+
     const close = chunk[chunk.length - 1];
     
     const baseHigh = Math.max(...chunk);
@@ -163,23 +203,31 @@ export default function ChartArea({
     const spread = (baseHigh - baseLow) || (close * 0.0001);
     const wickSpread = close * 0.00015;
     
-    // Generates tight wicks representing the highest/lowest prices touched during the interval
-    const high = Math.max(open, close, baseHigh) + (spread * 0.15 + wickSpread * (0.05 + (Math.sin(i) + 1) * 0.15));
-    const low = Math.min(open, close, baseLow) - (spread * 0.15 + wickSpread * (0.05 + (Math.cos(i) + 1) * 0.15));
+    // Generates tight wicks representing the highest/lowest prices touched during the interval (stable wicking formula)
+    const high = Math.max(open, close, baseHigh) + (spread * 0.15 + wickSpread * (0.05 + (Math.sin(cid) + 1) * 0.15));
+    const low = Math.min(open, close, baseLow) - (spread * 0.15 + wickSpread * (0.05 + (Math.cos(cid) + 1) * 0.15));
 
-    liveCandles.push({
+    const newLive = {
       open,
       close,
       high,
       low,
-      isGreen: close >= open
-    });
+      isGreen: close >= open,
+      candleId: cid
+    };
+
+    // Only cache completed candles
+    if (cid < activeCandleId) {
+      cache.set(cid, newLive);
+    }
+
+    liveCandles.push(newLive);
   }
 
   // Prepend deep, stable, realistic historical candle feeds to support consistent, infinite scrolling views
   const targetCount = 200;
   const historicalCount = Math.max(0, targetCount - liveCandles.length);
-  const historicalCandles: { open: number; close: number; high: number; low: number; isGreen: boolean }[] = [];
+  const historicalCandles: { open: number; close: number; high: number; low: number; isGreen: boolean; candleId: number }[] = [];
 
   if (historicalCount > 0) {
     // Generate deterministic seeded seed sequences unique to current asset and timeframe 
@@ -191,8 +239,8 @@ export default function ChartArea({
       seed += timeframe.charCodeAt(charIdx) * 17;
     }
     
-    const seededRandom = () => {
-      const x = Math.sin(seed++) * 10000;
+    const seededRandom = (cid: number) => {
+      const x = Math.sin(seed + cid) * 10000;
       return x - Math.floor(x);
     };
 
@@ -218,12 +266,22 @@ export default function ChartArea({
     }
 
     // Work backwards starting at the open price of the earliest live chunk segment
+    const firstLiveCandleId = liveCandles.length > 0 ? liveCandles[0].candleId : Math.floor(currentSec / sec);
     let lastClose = liveCandles.length > 0 ? liveCandles[0].open : activeAsset.currentPrice;
 
-    for (let i = 0; i < historicalCount; i++) {
+    for (let s = 1; s <= historicalCount; s++) {
+      const hcid = firstLiveCandleId - s;
+
+      if (cache.has(hcid)) {
+        const cached = cache.get(hcid)!;
+        historicalCandles.push(cached);
+        lastClose = cached.open;
+        continue;
+      }
+
       // Build realistic-looking wave trends (bull runs / bear drops) rather than flat static chaos
-      const trendCycle = Math.sin(i / 11) * 0.16;
-      const r = seededRandom();
+      const trendCycle = Math.sin(hcid / 11) * 0.16;
+      const r = seededRandom(hcid);
       const changePercent = (r - 0.49 + trendCycle) * volatilityScale;
       
       const change = lastClose * changePercent;
@@ -234,18 +292,21 @@ export default function ChartArea({
       const bodyMin = Math.min(open, close);
       const bodyDiff = bodyMax - bodyMin;
 
-      // Realistic trading wick sizes
-      const wickHigh = bodyMax + (bodyDiff * 0.3 + (bodyMax * seededRandom() * volatilityScale * 0.25));
-      const wickLow = bodyMin - (bodyDiff * 0.3 + (bodyMin * seededRandom() * volatilityScale * 0.25));
+      // Realistic trading wick sizes and offsets
+      const wickHigh = bodyMax + (bodyDiff * 0.3 + (bodyMax * r * volatilityScale * 0.25));
+      const wickLow = bodyMin - (bodyDiff * 0.3 + (bodyMin * r * volatilityScale * 0.25));
 
-      historicalCandles.push({
+      const newHistorical = {
         open,
         close,
         high: wickHigh,
         low: wickLow,
-        isGreen: close >= open
-      });
+        isGreen: close >= open,
+        candleId: hcid
+      };
 
+      cache.set(hcid, newHistorical);
+      historicalCandles.push(newHistorical);
       lastClose = open;
     }
 

@@ -256,64 +256,178 @@ export const ECONOMIC_EVENTS: EconomicEvent[] = [
   }
 ];
 
-// Top traders leaderboard. Some from Kenya, some international, allowing realistic interactive copy trades.
-export const TOP_TRADERS: TopTrader[] = [
+// Master list of potential copy traders to rotate weekly.
+const MASTER_TRADERS_POOL: Omit<TopTrader, 'rank' | 'isCopied'>[] = [
   {
-    rank: 1,
-    name: 'Wycliffe Ochieng',
-    country: 'KE',
+    name: "Wycliffe Ochieng",
+    country: "KE",
     totalTrades: 1482,
     winRate: 88.4,
     profit: 14120.50,
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    isCopied: false,
-    statusText: '⚡ Custom Scalping strategy active.'
+    avatarUrl: "",
+    statusText: "⚡ Custom Scalping strategy active."
   },
   {
-    rank: 2,
-    name: 'Elena Rostova',
-    country: 'RU',
+    name: "Elena Rostova",
+    country: "RU",
     totalTrades: 1251,
     winRate: 85.1,
     profit: 9150.00,
-    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    isCopied: false,
-    statusText: '📈 Trend follower on EUR/USD IDX.'
+    avatarUrl: "",
+    statusText: "📈 Trend follower on EUR/USD IDX."
   },
   {
-    rank: 3,
-    name: 'Njuguna Ndung\'u',
-    country: 'KE',
+    name: "Njuguna Ndung'u",
+    country: "KE",
     totalTrades: 942,
     winRate: 82.9,
     profit: 7840.40,
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    isCopied: false,
-    statusText: '🎯 60s High-speed scalper.'
+    avatarUrl: "",
+    statusText: "🎯 60s High-speed scalper."
   },
   {
-    rank: 4,
-    name: 'Marcus Sterling',
-    country: 'UK',
+    name: "Marcus Sterling",
+    country: "UK",
     totalTrades: 810,
     winRate: 81.3,
     profit: 6310.00,
-    avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
-    isCopied: false,
-    statusText: '📊 Volatility expert on Stocks.'
+    avatarUrl: "",
+    statusText: "📊 Volatility expert on Stocks."
   },
   {
-    rank: 5,
-    name: 'Sarah Mwangi',
-    country: 'KE',
+    name: "Sarah Mwangi",
+    country: "KE",
     totalTrades: 753,
     winRate: 79.8,
     profit: 4890.20,
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    isCopied: false,
-    statusText: '🔮 Pivot indicator user.'
+    avatarUrl: "",
+    statusText: "🔮 Pivot indicator user."
+  },
+  {
+    name: "Kiprop Bett",
+    country: "KE",
+    totalTrades: 1102,
+    winRate: 84.7,
+    profit: 11200.00,
+    avatarUrl: "",
+    statusText: "🌾 Scalping agricultural options."
+  },
+  {
+    name: "Yuki Tanaka",
+    country: "JP",
+    totalTrades: 1320,
+    winRate: 86.2,
+    profit: 10450.80,
+    avatarUrl: "",
+    statusText: "🌸 Ichimoku Cloud specialist."
+  },
+  {
+    name: "Carlos Mendez",
+    country: "MX",
+    totalTrades: 994,
+    winRate: 80.5,
+    profit: 7200.30,
+    avatarUrl: "",
+    statusText: "🌮 Price action breakout master."
+  },
+  {
+    name: "Chloe Laurent",
+    country: "FR",
+    totalTrades: 724,
+    winRate: 79.1,
+    profit: 5120.40,
+    avatarUrl: "",
+    statusText: "🔱 Bollinger Band scalper master."
+  },
+  {
+    name: "Sofia Rossi",
+    country: "IT",
+    totalTrades: 890,
+    winRate: 83.4,
+    profit: 8100.00,
+    avatarUrl: "",
+    statusText: "🍕 Dynamic channel trader."
+  },
+  {
+    name: "Lucas Fischer",
+    country: "DE",
+    totalTrades: 1105,
+    winRate: 82.1,
+    profit: 9020.50,
+    avatarUrl: "",
+    statusText: "🥨 Automated volume logic trader."
+  },
+  {
+    name: "Kamau Githinji",
+    country: "KE",
+    totalTrades: 1024,
+    winRate: 85.9,
+    profit: 9650.00,
+    avatarUrl: "",
+    statusText: "🚀 High-frequency options master."
+  },
+  {
+    name: "Amara Okafor",
+    country: "NG",
+    totalTrades: 885,
+    winRate: 81.7,
+    profit: 6780.00,
+    avatarUrl: "",
+    statusText: "💎 Support & resistance genius."
+  },
+  {
+    name: "Hans Weber",
+    country: "CH",
+    totalTrades: 1210,
+    winRate: 87.3,
+    profit: 12900.50,
+    avatarUrl: "",
+    statusText: "⏰ Precise UTC timing scalp options."
+  },
+  {
+    name: "Yasmine Benali",
+    country: "MA",
+    totalTrades: 690,
+    winRate: 77.9,
+    profit: 4120.00,
+    avatarUrl: "",
+    statusText: "🏜️ Fibonacci Retracement tracer."
   }
 ];
+
+export function getWeeklyTraders(): TopTrader[] {
+  const now = new Date();
+  const year = now.getFullYear();
+  const startOfYear = new Date(year, 0, 1);
+  const diff = now.getTime() - startOfYear.getTime();
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+  const weekNo = Math.ceil((dayOfYear + startOfYear.getDay() + 1) / 7);
+
+  const key = year * 100 + weekNo;
+  const selected: TopTrader[] = [];
+
+  for (let i = 0; i < 5; i++) {
+    // Pick from pool deterministically based on key
+    const poolIdx = (key + i * 3) % MASTER_TRADERS_POOL.length;
+    const item = MASTER_TRADERS_POOL[poolIdx];
+    selected.push({
+      rank: i + 1,
+      name: item.name,
+      country: item.country,
+      totalTrades: item.totalTrades + (key % 50), // slightly vary stats weekly
+      winRate: Math.min(94, Math.max(70, Math.round((item.winRate + (key % 10) / 10) * 10) / 10)),
+      profit: Math.round((item.profit + (key % 1000)) * 100) / 100,
+      avatarUrl: "",
+      isCopied: false,
+      statusText: item.statusText
+    });
+  }
+  return selected;
+}
+
+// Top traders leaderboard. Some from Kenya, some international, allowing realistic interactive copy trades.
+export const TOP_TRADERS: TopTrader[] = getWeeklyTraders();
 
 // Strategy tutorials
 export const TRADING_STRATEGIES: TradingStrategy[] = [
