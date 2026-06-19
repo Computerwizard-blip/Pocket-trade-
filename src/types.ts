@@ -13,6 +13,9 @@ export interface Asset {
   lastPrices: number[]; // Store a history of past ticks for charting
   trend: 'up' | 'down';
   changePct: number;
+  dailyHigh?: number;
+  dailyLow?: number;
+  volume?: number;
 }
 
 export type TradeType = 'up' | 'down';

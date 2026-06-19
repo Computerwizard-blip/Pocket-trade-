@@ -37,7 +37,7 @@ export default function ChartArea({
   setIsMarketLiveMode
 }: ChartAreaProps) {
   const [zoomLevel, setZoomLevel] = useState<number>(35); // number of visible points
-  const [showEMA, setShowEMA] = useState<boolean>(true);
+  const [showEMA, setShowEMA] = useState<boolean>(false);
   const [showRSI, setShowRSI] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 800, height: 430 });
@@ -138,15 +138,14 @@ export default function ChartArea({
   const sec = secondsPerCandle[timeframe] || 30;
 
   // Group our current 1s tick history into chronological segments matching candlestick durations
+  // Align from index 0 forward so previously completed candles remain fully static, and only the last one moves up/down.
   const liveChunks: number[][] = [];
-  for (let j = prices.length; j > 0; j -= sec) {
-    const start = Math.max(0, j - sec);
-    const chunk = prices.slice(start, j);
+  for (let j = 0; j < prices.length; j += sec) {
+    const chunk = prices.slice(j, j + sec);
     if (chunk.length > 0) {
       liveChunks.push(chunk);
     }
   }
-  liveChunks.reverse();
 
   // Create highly responsive Candlesticks from live ticks 
   const liveCandles: { open: number; close: number; high: number; low: number; isGreen: boolean }[] = [];
@@ -506,20 +505,6 @@ export default function ChartArea({
 
           {/* Independent technical indicator toggle buttons */}
           <button
-            id="ema-toggle-btn"
-            onClick={() => setShowEMA(!showEMA)}
-            className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-mono font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
-              showEMA 
-                ? 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300 shadow' 
-                : 'bg-white/5 border-white/5 text-slate-400 hover:text-white'
-            }`}
-            title="Toggle Exponential Moving Averages (EMA 9/21)"
-          >
-            <TrendingUp size={12} className={showEMA ? "text-cyan-400 animate-pulse" : "text-slate-400"} />
-            <span>EMA (9/21)</span>
-          </button>
-
-          <button
             id="rsi-toggle-btn"
             onClick={() => setShowRSI(!showRSI)}
             className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-mono font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -735,29 +720,7 @@ export default function ChartArea({
             );
           })}
 
-          {/* Strategic Moving Averages (EMA-9 Cyan, EMA-21 Fuchsia indicator lines) */}
-          {showEMA && ema9.length > 0 && (
-            <>
-              {/* EMA 9 Cyan line */}
-              <path 
-                d={`M ${visiblePrices.map((_, idx) => `${getX(idx)},${getY(ema9[idx])}`).join(' L ')}`} 
-                fill="none" 
-                stroke="#06b6d4" 
-                strokeWidth="1.5" 
-                strokeOpacity="0.8"
-                id="ema-cyan-trail"
-              />
-              {/* EMA 21 Fuchsia line */}
-              <path 
-                d={`M ${visiblePrices.map((_, idx) => `${getX(idx)},${getY(ema21[idx])}`).join(' L ')}`} 
-                fill="none" 
-                stroke="#d946ef" 
-                strokeWidth="1.5" 
-                strokeOpacity="0.8"
-                id="ema-fuchsia-trail"
-              />
-            </>
-          )}
+
 
           {/* Active Options strike lanes */}
           {activeTrades.filter(t => t.assetId === activeAsset.id && t.status === 'pending').map((position) => {

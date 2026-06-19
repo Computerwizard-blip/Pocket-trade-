@@ -223,7 +223,13 @@ export default function OrderForm({
 
         {/* Disclaimer Legal footnote */}
         <p id="trading-disclaimer text" className="text-[10px] text-slate-500 text-center leading-normal mt-1.5">
-          Virtual trading simulator. All values represent dynamic algorithm ticks. No capital under risk.
+          {isDemo ? (
+            "Virtual trading simulator. All values represent dynamic algorithm ticks. No capital under risk."
+          ) : (
+            <span className="text-rose-450 font-bold tracking-tight">
+              ⚠️ Real trading account involving real capital under risk. Fully active trades.
+            </span>
+          )}
         </p>
       </div>
 

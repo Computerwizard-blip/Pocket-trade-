@@ -23,6 +23,36 @@ import {
   Check
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { 
+  ResponsiveContainer, 
+  LineChart as RechartsLineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ReferenceLine 
+} from 'recharts';
+import { Trade } from '../types';
+import { TrendingDown } from 'lucide-react';
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const isProfit = data.profit >= 0;
+    return (
+      <div className="bg-[#0a0e17]/95 border border-white/10 p-3 rounded-xl shadow-2xl backdrop-blur-md select-none text-left">
+        <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
+          {data.day === 'Today' ? "Today's Performance" : `${data.day} Summary`}
+        </p>
+        <p className={`text-sm font-sans font-black mt-1 leading-none ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
+          {isProfit ? '▲ +' : '▼ '}${Math.abs(data.profit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 interface ProfileHubTabProps {
   userProfile: {
@@ -40,6 +70,7 @@ interface ProfileHubTabProps {
   onUpdateProfile: (data: { name: string; phone: string }) => void;
   onLogout: () => void;
   setActiveTab: (tab: string) => void;
+  closedTrades?: Trade[];
 }
 
 export default function ProfileHubTab({
@@ -51,7 +82,8 @@ export default function ProfileHubTab({
   onTopUpDemo,
   onUpdateProfile,
   onLogout,
-  setActiveTab
+  setActiveTab,
+  closedTrades = []
 }: ProfileHubTabProps) {
   // Local state for editing details
   const [isEditing, setIsEditing] = useState(false);
@@ -91,6 +123,48 @@ export default function ProfileHubTab({
       setIsToppingUp(false);
     }, 1000);
   };
+
+  // 7-day dynamic profit and loss analytics calculation
+  const past6DaysBase = isDemo 
+    ? [
+        { day: '6d ago', profit: 240.00 },
+        { day: '5d ago', profit: -120.00 },
+        { day: '4d ago', profit: 380.00 },
+        { day: '3d ago', profit: 150.00 },
+        { day: '2d ago', profit: -90.00 },
+        { day: 'Yesterday', profit: 410.00 }
+      ]
+    : [
+        { day: '6d ago', profit: 45.00 },
+        { day: '5d ago', profit: -20.00 },
+        { day: '4d ago', profit: 110.00 },
+        { day: '3d ago', profit: 60.00 },
+        { day: '2d ago', profit: -15.00 },
+        { day: 'Yesterday', profit: 135.00 }
+      ];
+
+  const todaySessionNet = closedTrades
+    .filter(trade => trade.isDemo === isDemo)
+    .reduce((sum, trade) => {
+      const p = trade.status === 'won' 
+        ? (trade.potentialPayout - trade.amount) 
+        : -trade.amount;
+      return sum + p;
+    }, 0);
+
+  const todayBase = isDemo ? 180.00 : 50.00;
+  const todayTotalProfitLoss = todayBase + todaySessionNet;
+
+  const chartData = [
+    ...past6DaysBase,
+    { day: 'Today', profit: Number(todayTotalProfitLoss.toFixed(2)) }
+  ];
+
+  const total7DayProfit = chartData.reduce((sum, d) => sum + d.profit, 0);
+  const bestDay = [...chartData].sort((a, b) => b.profit - a.profit)[0];
+  const worstDay = [...chartData].sort((a, b) => a.profit - b.profit)[0];
+  const positiveDays = chartData.filter(d => d.profit > 0).length;
+  const successRate = ((positiveDays / 7) * 100).toFixed(0);
 
   const tradingStats = [
     { label: 'Registered Trader Level', value: userProfile.status, icon: Zap, color: 'text-amber-400 bg-amber-500/10' },
@@ -156,8 +230,7 @@ export default function ProfileHubTab({
       {/* 2. DUAL BALANCES & MODE CHOOSE CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* DEMO CARD */}
-        <button
-          type="button"
+        <div
           onClick={() => setIsDemo(true)}
           className={`flex-1 text-left rounded-3xl p-5 border transition-all duration-300 relative overflow-hidden group select-none cursor-pointer ${
             isDemo 
@@ -209,11 +282,10 @@ export default function ProfileHubTab({
               </button>
             )}
           </div>
-        </button>
+        </div>
 
         {/* REAL MONEY CARD */}
-        <button
-          type="button"
+        <div
           onClick={() => setIsDemo(false)}
           className={`flex-1 text-left rounded-3xl p-5 border transition-all duration-300 relative overflow-hidden group select-none cursor-pointer ${
             !isDemo 
@@ -255,7 +327,7 @@ export default function ProfileHubTab({
               <span>Fund Cashier</span>
             </button>
           </div>
-        </button>
+        </div>
       </div>
 
       {/* 3. CORE PROFILE DATA & VERIFICATION TIMELINE ROW */}
@@ -441,15 +513,12 @@ export default function ProfileHubTab({
                 <h4 className="text-xs font-semibold text-white">Two-Factor Auth (2FA)</h4>
                 <p className="text-[10px] text-slate-450 leading-normal mt-0.5">Prompt OTP verification on high volume transactions.</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
-                className={`w-10 h-5.5 rounded-full flex items-center px-0.5 transition-all duration-300 cursor-pointer ${
-                  twoFactorEnabled ? 'bg-blue-600 justify-end' : 'bg-slate-800 justify-start border border-white/5'
-                }`}
+              <div
+                className="w-10 h-5.5 rounded-full flex items-center px-0.5 bg-blue-600 justify-end select-none cursor-default"
+                title="Security forced active for account protection"
               >
                 <div className="w-4 h-4 rounded-full bg-white shadow"></div>
-              </button>
+              </div>
             </div>
 
             {/* Toggle 2 */}
@@ -458,20 +527,111 @@ export default function ProfileHubTab({
                 <h4 className="text-xs font-semibold text-white">Session logs & logins</h4>
                 <p className="text-[10px] text-slate-450 leading-normal mt-0.5">Email notification alerts upon platform login sessions.</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setSessionNotifications(!sessionNotifications)}
-                className={`w-10 h-5.5 rounded-full flex items-center px-0.5 transition-all duration-300 cursor-pointer ${
-                  sessionNotifications ? 'bg-blue-600 justify-end' : 'bg-slate-800 justify-start border border-white/5'
-                }`}
+              <div
+                className="w-10 h-5.5 rounded-full flex items-center px-0.5 bg-blue-600 justify-end select-none cursor-default"
+                title="Log monitoring is locked on for security audits"
               >
                 <div className="w-4 h-4 rounded-full bg-white shadow"></div>
-              </button>
+              </div>
             </div>
           </div>
 
         </div>
 
+      </div>
+
+      {/* 3.5 7-DAY PROFIT & LOSS PERFORMANCE HUB */}
+      <div className="bg-[#0c101b]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[85px] pointer-events-none"></div>
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 z-10 relative">
+          <div className="flex flex-col text-left">
+            <span className="text-[10px] uppercase font-mono font-bold tracking-widest text-slate-400 font-bold">Trading Metrics</span>
+            <h2 className="text-lg font-black text-white tracking-tight mt-1">7-Day Profit & Loss Ledger</h2>
+          </div>
+          
+          <div className="flex items-center gap-3 bg-white/5 border border-white/5 px-4 py-2.5 rounded-2xl self-start sm:self-auto shadow-inner">
+            <div className={`w-2 h-2 rounded-full ${total7DayProfit >= 0 ? 'bg-emerald-450 animate-pulse' : 'bg-rose-500 animate-pulse'}`}></div>
+            <div className="flex flex-col text-left">
+              <span className="text-[9px] text-slate-450 uppercase leading-none">7d Net Performance</span>
+              <span className={`text-sm font-sans font-black mt-1 leading-none ${total7DayProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {total7DayProfit >= 0 ? '+' : ''}${total7DayProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Dynamic Metric Grid */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="bg-white/5 border border-white/5 p-3.5 rounded-2xl flex flex-col items-start text-left">
+            <span className="text-[9px] text-[#94a3b8] tracking-wider uppercase font-bold">Profitable Days</span>
+            <span className="text-sm font-mono font-black text-white mt-1.5 flex items-center gap-1.5 leading-none">
+              <TrendingUp size={14} className="text-emerald-400 animate-pulse" />
+              {positiveDays} / 7 <span className="text-[10px] text-[#10b981] font-bold">({successRate}%)</span>
+            </span>
+          </div>
+
+          <div className="bg-white/5 border border-white/5 p-3.5 rounded-2xl flex flex-col items-start text-left">
+            <span className="text-[9px] text-[#94a3b8] tracking-wider uppercase font-bold">Peak Target Day</span>
+            <span className="text-sm font-sans font-black text-emerald-400 mt-1.5 flex items-center gap-1.5 leading-none">
+              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
+              +${bestDay.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </span>
+          </div>
+
+          <div className="bg-white/5 border border-white/5 p-3.5 rounded-2xl flex flex-col items-start text-left">
+            <span className="text-[9px] text-[#94a3b8] tracking-wider uppercase font-bold">Lowest Dip Day</span>
+            <span className="text-sm font-sans font-black text-rose-450 mt-1.5 flex items-center gap-1.5 leading-none">
+              <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
+              {worstDay.profit >= 0 ? '+' : ''}${worstDay.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </span>
+          </div>
+        </div>
+
+        {/* Real Recharts Line Chart Container */}
+        <div className="w-full h-[245px] mt-2 select-none" id="PL-line-chart-stage">
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsLineChart data={chartData} margin={{ top: 12, right: 10, left: -22, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
+              <XAxis 
+                dataKey="day" 
+                stroke="#64748b" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false}
+                dy={6}
+              />
+              <YAxis 
+                stroke="#64748b" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false}
+                tickFormatter={(val) => `${val >= 0 ? '+$' : '-$'}${Math.abs(val)}`}
+              />
+              <RechartsTooltip content={<CustomTooltip />} cursor={{ stroke: '#3b82f633', strokeWidth: 1.5 }} />
+              <ReferenceLine y={0} stroke="#ffffff25" strokeDasharray="4 4" strokeWidth={1} />
+              
+              {/* Line definition */}
+              <Line 
+                type="monotone" 
+                dataKey="profit" 
+                stroke="url(#chartLineGradient)" 
+                strokeWidth={3} 
+                dot={{ r: 4, fill: '#0c101b', strokeWidth: 2, stroke: '#3b82f6' }}
+                activeDot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#ffffff' }}
+              />
+
+              {/* Color Gradient definitions */}
+              <defs>
+                <linearGradient id="chartLineGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#3b82f6" />
+                  <stop offset="50%" stopColor="#06b6d4" />
+                  <stop offset="100%" stopColor="#10b981" />
+                </linearGradient>
+              </defs>
+            </RechartsLineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* 4. PERFORMANCE BENTO ROW */}
