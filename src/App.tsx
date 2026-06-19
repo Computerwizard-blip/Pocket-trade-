@@ -1257,7 +1257,7 @@ export default function App() {
           className="md:hidden absolute inset-0 bg-[#06080F] z-50 flex flex-col overflow-hidden animate-fade-in text-white select-none"
         >
           {/* Custom Upper Taskbar Header */}
-          <div className="h-[56px] border-b border-white/5 bg-slate-950/80 px-4 flex items-center justify-between shrink-0 relative">
+          <div className="h-[56px] border-b border-white/5 bg-slate-950/80 px-4 flex items-center justify-between shrink-0 relative z-30">
             <div className="flex items-center gap-2 min-w-0">
               <button
                 type="button"
@@ -1341,7 +1341,7 @@ export default function App() {
             {showAssetSelector && (
               <div
                 id="assets-registry-dropdown-mobile"
-                className="absolute top-[52px] left-4 w-[calc(100vw-32px)] bg-[#0c101b]/98 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] z-50 overflow-hidden py-1 animate-fade-in divide-y divide-white/5 font-sans"
+                className="absolute top-[102px] left-4 w-[calc(100vw-32px)] bg-[#0c101b]/98 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] z-50 overflow-hidden py-1 animate-fade-in divide-y divide-white/5 font-sans"
               >
                 {/* Category Switcher Row */}
                 <div className="px-2 py-1.5 bg-[#0a0d17] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
@@ -1465,24 +1465,24 @@ export default function App() {
           </div>
 
           {/* Execution mobile desk at bottom */}
-          <div className="p-4 bg-slate-950 border-t border-white/5 shrink-0 flex flex-col gap-3">
+          <div className="p-2.5 bg-slate-950 border-t border-white/5 shrink-0 flex flex-col gap-2">
             {/* Input fields row - Time & Amount */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {/* Time input */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-2 flex items-center justify-between text-xs font-mono relative">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-1.5 flex items-center justify-between text-xs font-mono relative">
                 <button
                   onClick={() =>
                     setMobileDuration((prev) => Math.max(15, prev - 15))
                   }
-                  className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-300 active:scale-90 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-300 active:scale-90 transition-transform cursor-pointer select-none"
                 >
                   −
                 </button>
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center select-none">
                   <span className="text-[8px] text-slate-400 font-sans uppercase">
                     Duration
                   </span>
-                  <span className="font-bold text-white mt-0.5">
+                  <span className="font-bold text-white mt-0.5 text-xs">
                     {mobileDuration}s
                   </span>
                 </div>
@@ -1490,27 +1490,27 @@ export default function App() {
                   onClick={() =>
                     setMobileDuration((prev) => Math.min(300, prev + 15))
                   }
-                  className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-300 active:scale-90 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-300 active:scale-90 transition-transform cursor-pointer select-none"
                 >
                   +
                 </button>
               </div>
 
               {/* Amount input */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-2 flex items-center justify-between text-xs font-mono relative">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-1.5 flex items-center justify-between text-xs font-mono relative">
                 <button
                   onClick={() =>
                     setMobileAmount((prev) => Math.max(10, prev - 10))
                   }
-                  className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-300 active:scale-90 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-300 active:scale-90 transition-transform cursor-pointer select-none"
                 >
                   −
                 </button>
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center select-none">
                   <span className="text-[8px] text-slate-400 font-sans uppercase">
                     Investment
                   </span>
-                  <span className="font-bold text-amber-400 mt-0.5">
+                  <span className="font-bold text-amber-400 mt-0.5 text-xs">
                     kS{mobileAmount}
                   </span>
                 </div>
@@ -1518,7 +1518,7 @@ export default function App() {
                   onClick={() =>
                     setMobileAmount((prev) => Math.min(2000, prev + 50))
                   }
-                  className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-300 active:scale-90 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-300 active:scale-90 transition-transform cursor-pointer select-none"
                 >
                   +
                 </button>
@@ -1526,7 +1526,7 @@ export default function App() {
             </div>
 
             {/* Projected payout row */}
-            <div className="flex items-center justify-between px-2 text-xs">
+            <div className="flex items-center justify-between px-2 text-[10px] select-none">
               <span className="text-slate-400 font-sans">
                 Payout earnings yield ({activeAsset.payoutPct}%)
               </span>
@@ -1537,7 +1537,7 @@ export default function App() {
             </div>
 
             {/* Big Green Higher & Red Lower Buttons (BUY / SELL triggers matching the second photo!) */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => {
                   const currentBal = isDemo ? demoBalance : realBalance;
@@ -1556,11 +1556,11 @@ export default function App() {
                     type: "win",
                   });
                 }}
-                className="py-3 bg-[#10b981] hover:bg-[#34d399] active:bg-[#059669] text-white font-sans font-black uppercase text-center rounded-2xl flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-emerald-500/15 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all text-xs"
+                className="py-1.5 xs:py-2.5 bg-[#10b981] hover:bg-[#34d399] active:bg-[#059669] text-white font-sans font-black uppercase text-center rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/15 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all text-sm select-none"
               >
                 <span>HIGHER ↑</span>
-                <span className="text-[10px] opacity-90 font-mono font-bold">
-                  +$80 Est.
+                <span className="text-[9px] font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded leading-none">
+                  +kS{(mobileAmount * (activeAsset.payoutPct / 100)).toFixed(0)}
                 </span>
               </button>
 
@@ -1582,11 +1582,11 @@ export default function App() {
                     type: "win",
                   });
                 }}
-                className="py-3 bg-[#f43f5e] hover:bg-[#f87171] active:bg-[#e11d48] text-white font-sans font-black uppercase text-center rounded-2xl flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-rose-500/15 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all text-xs"
+                className="py-1.5 xs:py-2.5 bg-[#f43f5e] hover:bg-[#f87171] active:bg-[#e11d48] text-white font-sans font-black uppercase text-center rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-rose-500/15 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all text-sm select-none"
               >
                 <span>LOWER ↓</span>
-                <span className="text-[10px] opacity-90 font-mono font-bold">
-                  +$80 Est.
+                <span className="text-[9px] font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded leading-none">
+                  +kS{(mobileAmount * (activeAsset.payoutPct / 100)).toFixed(0)}
                 </span>
               </button>
             </div>

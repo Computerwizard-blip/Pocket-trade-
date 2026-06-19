@@ -15,7 +15,8 @@ import {
   Maximize2,
   Minimize2,
   Clock,
-  ChevronDown
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { Asset, Trade } from '../types';
 
@@ -109,8 +110,8 @@ export default function ChartArea({
       for (let entry of entries) {
         const { width, height } = entry.contentRect;
         setContainerSize({ 
-          width: Math.max(width, 400), 
-          height: Math.max(height, 350) 
+          width: Math.max(width, 280), 
+          height: Math.max(height, window.innerWidth < 768 ? 140 : 280) 
         });
       }
     });
@@ -361,6 +362,21 @@ export default function ChartArea({
     return rsiPanelY + rsiPanelHeight - (rsiVal / 100) * rsiPanelHeight;
   };
 
+  // Passive touchmove intercept to prevent browser page panning while dragging the chart
+  useEffect(() => {
+    const canvas = document.getElementById('primary-chart-canvas');
+    if (!canvas) return;
+    const handlePrevent = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        e.preventDefault();
+      }
+    };
+    canvas.addEventListener('touchmove', handlePrevent, { passive: false });
+    return () => {
+      canvas.removeEventListener('touchmove', handlePrevent);
+    };
+  }, []);
+
   // Interactive drag-scrolling/touch-swiping action for horizontal panning history
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.target && (e.target as Element).closest('button')) return; // ignore buttons
@@ -378,7 +394,8 @@ export default function ChartArea({
     if (isDragging) {
       const deltaX = e.clientX - dragStartX;
       const step = chartWidth / (candles.length - 1 || 1);
-      const candlesMoved = Math.round(deltaX / (step || 10));
+      // Floating-point candles moved for absolute smooth continuously interactive dragging!
+      const candlesMoved = deltaX / (step || 10);
       // Moving mouse to the right (deltaX > 0) pulls OLDER data into view (scrollback increases)
       const nextOffset = Math.max(0, Math.min(maxScrollOffset, dragStartScrollOffset + candlesMoved));
       setScrollOffset(nextOffset);
@@ -411,7 +428,7 @@ export default function ChartArea({
     if (isDragging && e.touches.length === 1) {
       const deltaX = e.touches[0].clientX - dragStartX;
       const step = chartWidth / (candles.length - 1 || 1);
-      const candlesMoved = Math.round(deltaX / (step || 10));
+      const candlesMoved = deltaX / (step || 10);
       const nextOffset = Math.max(0, Math.min(maxScrollOffset, dragStartScrollOffset + candlesMoved));
       setScrollOffset(nextOffset);
     }
@@ -419,6 +436,14 @@ export default function ChartArea({
 
   const handleTouchEnd = () => {
     setIsDragging(false);
+  };
+
+  // Mouse Wheel and Trackpad scrolling support for quick panning back & forth
+  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (Math.abs(delta) < 0.5) return;
+    const scrollAmount = delta * 0.08;
+    setScrollOffset((prev) => Math.max(0, Math.min(maxScrollOffset, prev + scrollAmount)));
   };
 
   // SVG Area mapping formulas
@@ -450,12 +475,12 @@ export default function ChartArea({
     >
       
       {/* 1. CHART TOP ROW HEADER: Asset stats, Price, Candle/Mountain selector */}
-      <div id="chart-header" className="flex items-center justify-between px-5 py-3.5 bg-slate-950/60 border-b border-white/5 backdrop-blur">
-        <div id="chart-asset-badge-info" className="flex items-center gap-3 select-none">
-          <div id="trend-icon-box" className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+      <div id="chart-header" className="flex items-center justify-between px-3 py-1.5 md:px-5 md:py-3.5 bg-slate-950/60 border-b border-white/5 backdrop-blur">
+        <div id="chart-asset-badge-info" className="flex items-center gap-2 md:gap-3 select-none">
+          <div id="trend-icon-box" className={`w-7 h-7 md:w-9 md:h-9 rounded-xl flex items-center justify-center border ${
             isUpTrend ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
           }`}>
-            <TrendingUpDown size={18} />
+            <TrendingUpDown size={14} className="md:w-[18px] md:h-[18px]" />
           </div>
           <div id="active-asset-headers" className="flex flex-col min-w-0">
             <div id="asset-title-row" className="flex items-center gap-2 max-w-[120px] xs:max-w-[200px] sm:max-w-xs md:max-w-md lg:max-w-lg min-w-0">
@@ -584,6 +609,7 @@ export default function ChartArea({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onWheel={handleWheel}
           className={`absolute inset-0 select-none transition-all ${
             isDragging ? 'cursor-grabbing' : 'cursor-grab'
           }`}
@@ -1049,24 +1075,21 @@ export default function ChartArea({
 
 
 
-
-
-
       </div>
 
       {/* Dynamic and Compact Time Frame Bottom Control Bar */}
       {isMarketLiveMode && (
-        <div id="timeframe-control-bar" className="bg-[#05070a] border-t border-white/5 px-5 py-2.5 flex items-center justify-between gap-3 select-none relative">
-          <div className="flex items-center gap-2 relative">
+        <div id="timeframe-control-bar" className="bg-[#05070a] border-t border-white/5 px-3 py-1.5 md:px-5 md:py-2.5 flex items-center justify-between gap-3 select-none relative">
+          <div className="flex items-center gap-1.5 md:gap-2 relative">
             <button
               id="timeframe-select-trigger"
               onClick={() => setShowTimeframeSelector(!showTimeframeSelector)}
-              className="bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 text-xs font-mono font-bold text-slate-300 py-1.5 px-3 rounded-lg flex items-center gap-2 cursor-pointer transition-all outline-none"
+              className="bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 text-[10px] md:text-xs font-mono font-bold text-slate-300 py-1 px-2 md:py-1.5 md:px-3 rounded-lg flex items-center gap-1 md:gap-2 cursor-pointer transition-all outline-none"
               title="Select timeframe candle interval"
             >
-              <Clock size={12} className="text-blue-400" />
+              <Clock size={10} className="text-blue-400 md:w-3 md:h-3" />
               <span>Time frame: <strong className="text-white font-extrabold">{timeframe}</strong></span>
-              <ChevronDown size={12} className={`text-slate-400 transition-transform ${showTimeframeSelector ? 'rotate-180' : ''}`} />
+              <ChevronDown size={10} className={`text-slate-400 transition-transform md:w-3 md:h-3 ${showTimeframeSelector ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Timeframe selector popover overlay */}
