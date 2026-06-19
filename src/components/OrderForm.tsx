@@ -202,7 +202,7 @@ export default function OrderForm({
           className="w-full py-4 px-5 rounded-2xl bg-[#10b981] hover:bg-[#34d399] active:bg-[#059669] text-white font-sans font-bold text-center flex items-center justify-between shadow-lg shadow-emerald-500/10 group cursor-pointer hover:scale-[1.01] active:scale-100 transition-all"
         >
           <div className="flex flex-col items-start leading-none gap-0.5 font-sans">
-            <span id="btn-up-header" className="text-[11px] font-mono font-bold tracking-widest text-[#d1fae5]/80 uppercase">HIGHER (UP)</span>
+            <span id="btn-up-header" className="text-[11px] font-mono font-bold tracking-widest text-[#d1fae5]/80 uppercase">BUY (UP)</span>
             <span id="btn-up-amount" className="text-lg font-extrabold">+$80 Est.</span>
           </div>
           <ArrowUpCircle size={28} className="text-[#d1fae5] group-hover:translate-y-[-2px] transition-transform" />
@@ -215,7 +215,7 @@ export default function OrderForm({
           className="w-full py-4 px-5 rounded-2xl bg-[#f43f5e] hover:bg-[#f87171] active:bg-[#e11d48] text-white font-sans font-bold text-center flex items-center justify-between shadow-lg shadow-rose-500/10 group cursor-pointer hover:scale-[1.01] active:scale-100 transition-all"
         >
           <div className="flex flex-col items-start leading-none gap-0.5 font-sans">
-            <span id="btn-down-header" className="text-[11px] font-mono font-bold tracking-widest text-[#ffe4e6]/80 uppercase">LOWER (DOWN)</span>
+            <span id="btn-down-header" className="text-[11px] font-mono font-bold tracking-widest text-[#ffe4e6]/80 uppercase">SELL (DOWN)</span>
             <span id="btn-down-amount" className="text-lg font-extrabold">+$80 Est.</span>
           </div>
           <ArrowDownCircle size={28} className="text-[#ffe4e6] group-hover:translate-y-[2px] transition-transform" />

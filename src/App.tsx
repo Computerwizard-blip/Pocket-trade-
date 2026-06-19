@@ -394,6 +394,8 @@ export default function App() {
     useState<string>("currencies");
   const [mobileAmount, setMobileAmount] = useState<number>(100);
   const [mobileDuration, setMobileDuration] = useState<number>(30);
+  const [quickAmount, setQuickAmount] = useState<number>(100);
+  const [quickDuration, setQuickDuration] = useState<number>(30);
 
   // Fast switcher for assets
   const handleSwitchAsset = (direction: "next" | "prev" = "next") => {
@@ -853,6 +855,158 @@ export default function App() {
                 isMarketLiveMode={isMarketLiveMode}
                 setIsMarketLiveMode={setIsMarketLiveMode}
               />
+
+              {/* Desktop quick execution buy & sell bar below chart */}
+              <div
+                id="desktop-quick-trade-bar"
+                className="hidden md:flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-900/90 border border-white/10 rounded-2xl shadow-xl select-none shrink-0"
+              >
+                <div className="flex items-center gap-3">
+                  {/* EXPIRATION */}
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/5 rounded-xl p-1 px-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setQuickDuration((prev) => Math.max(15, prev - 15))}
+                      className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold flex items-center justify-center transition-transform active:scale-90 cursor-pointer text-xs"
+                      title="Decrease duration by 15s"
+                    >
+                      −
+                    </button>
+                    <div className="flex flex-col items-center min-w-[65px]">
+                      <span className="text-[8px] text-slate-400 font-sans font-bold uppercase tracking-wider leading-none">
+                        Duration
+                      </span>
+                      <span className="font-mono text-[11px] font-black text-white mt-1">
+                        {quickDuration >= 60 ? `${quickDuration / 60}m` : `${quickDuration}s`}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setQuickDuration((prev) => Math.min(300, prev + 15))}
+                      className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold flex items-center justify-center transition-transform active:scale-90 cursor-pointer text-xs"
+                      title="Increase duration by 15s"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* INVESTMENT AMOUNT */}
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/5 rounded-xl p-1 px-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setQuickAmount((prev) => Math.max(10, prev - 10))}
+                      className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold flex items-center justify-center transition-transform active:scale-90 cursor-pointer text-xs"
+                      title="Decrease investment by $10"
+                    >
+                      −
+                    </button>
+                    <div className="flex flex-col items-center min-w-[70px]">
+                      <span className="text-[8px] text-slate-400 font-sans font-bold uppercase tracking-wider leading-none">
+                        Investment
+                      </span>
+                      <span className="font-mono text-[11px] font-black text-amber-400 mt-1">
+                        ${quickAmount}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setQuickAmount((prev) => Math.min(5000, prev + 50))}
+                      className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold flex items-center justify-center transition-transform active:scale-90 cursor-pointer text-xs"
+                      title="Increase investment by $50"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Quick Presets */}
+                  <div className="flex items-center gap-1">
+                    {[50, 100, 250, 500].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setQuickAmount(preset)}
+                        className={`px-2 py-1 text-[10px] font-mono font-bold rounded-lg border transition-all cursor-pointer ${
+                          quickAmount === preset
+                            ? "bg-blue-600 border-blue-500 text-white font-extrabold shadow"
+                            : "bg-white/5 border-white/5 text-slate-350 hover:bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        ${preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Return/Profit metrics */}
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col text-right leading-none select-none">
+                    <span className="text-[8px] text-slate-400 font-sans font-bold uppercase tracking-wider">
+                      Est. Payout ({activeAsset.payoutPct}%)
+                    </span>
+                    <span className="font-mono text-[13px] font-extrabold text-[#10b981] mt-1.5">
+                      +${(quickAmount * (1 + activeAsset.payoutPct / 100)).toFixed(1)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* HIGHER BUY BUTTON */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentBal = isDemo ? demoBalance : realBalance;
+                        if (quickAmount > currentBal) {
+                          setToastMessage({
+                            id: "err-" + Date.now(),
+                            text: `Insufficient Sim funds to option $${quickAmount}! Recharge balance.`,
+                            type: "loss",
+                          });
+                          return;
+                        }
+                        handlePlaceTrade("up", quickAmount, quickDuration);
+                        setToastMessage({
+                          id: "pos-" + Date.now(),
+                          text: `CALL option placed on ${activeAsset.name} for $${quickAmount}!`,
+                          type: "win",
+                        });
+                      }}
+                      className="px-8 py-4 bg-[#10b981] hover:bg-[#34d399] active:scale-95 text-white font-sans font-black text-sm uppercase rounded-full flex items-center gap-2.5 shadow-xl shadow-emerald-500/25 cursor-pointer transition-all shrink-0 hover:scale-[1.03]"
+                    >
+                      <span className="tracking-wider">BUY ↑</span>
+                      <span className="font-mono text-[10px] font-black bg-white/20 px-2 py-0.5 rounded-full leading-none">
+                        +${(quickAmount * (activeAsset.payoutPct / 100)).toFixed(0)}
+                      </span>
+                    </button>
+
+                    {/* LOWER BUY BUTTON */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentBal = isDemo ? demoBalance : realBalance;
+                        if (quickAmount > currentBal) {
+                          setToastMessage({
+                            id: "err-" + Date.now(),
+                            text: `Insufficient Sim funds to option $${quickAmount}! Recharge balance.`,
+                            type: "loss",
+                          });
+                          return;
+                        }
+                        handlePlaceTrade("down", quickAmount, quickDuration);
+                        setToastMessage({
+                          id: "pos-" + Date.now(),
+                          text: `PUT option placed on ${activeAsset.name} for $${quickAmount}!`,
+                          type: "win",
+                        });
+                      }}
+                      className="px-8 py-4 bg-[#f43f5e] hover:bg-[#f87171] active:scale-95 text-white font-sans font-black text-sm uppercase rounded-full flex items-center gap-2.5 shadow-xl shadow-rose-500/25 cursor-pointer transition-all shrink-0 hover:scale-[1.03]"
+                    >
+                      <span className="tracking-wider">SELL ↓</span>
+                      <span className="font-mono text-[10px] font-black bg-white/20 px-2 py-0.5 rounded-full leading-none">
+                        +${(quickAmount * (activeAsset.payoutPct / 100)).toFixed(0)}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
 
 
             </div>
@@ -1556,10 +1710,10 @@ export default function App() {
                     type: "win",
                   });
                 }}
-                className="py-1.5 xs:py-2.5 bg-[#10b981] hover:bg-[#34d399] active:bg-[#059669] text-white font-sans font-black uppercase text-center rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/15 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all text-sm select-none"
+                className="py-3 px-5 bg-[#10b981] hover:bg-[#34d399] active:bg-[#059669] text-white font-sans font-black uppercase text-center rounded-full flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/25 cursor-pointer hover:scale-[1.03] active:scale-95 transition-all text-sm md:text-base select-none w-full"
               >
-                <span>HIGHER ↑</span>
-                <span className="text-[9px] font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded leading-none">
+                <span>BUY ↑</span>
+                <span className="text-[10px] font-mono font-bold bg-white/20 px-2 py-0.5 rounded-full leading-none">
                   +kS{(mobileAmount * (activeAsset.payoutPct / 100)).toFixed(0)}
                 </span>
               </button>
@@ -1582,10 +1736,10 @@ export default function App() {
                     type: "win",
                   });
                 }}
-                className="py-1.5 xs:py-2.5 bg-[#f43f5e] hover:bg-[#f87171] active:bg-[#e11d48] text-white font-sans font-black uppercase text-center rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-rose-500/15 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all text-sm select-none"
+                className="py-3 px-5 bg-[#f43f5e] hover:bg-[#f87171] active:bg-[#e11d48] text-white font-sans font-black uppercase text-center rounded-full flex items-center justify-center gap-2 shadow-xl shadow-rose-500/25 cursor-pointer hover:scale-[1.03] active:scale-95 transition-all text-sm md:text-base select-none w-full"
               >
-                <span>LOWER ↓</span>
-                <span className="text-[9px] font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded leading-none">
+                <span>SELL ↓</span>
+                <span className="text-[10px] font-mono font-bold bg-white/20 px-2 py-0.5 rounded-full leading-none">
                   +kS{(mobileAmount * (activeAsset.payoutPct / 100)).toFixed(0)}
                 </span>
               </button>
