@@ -72,6 +72,8 @@ export interface Transaction {
   phoneOrWallet?: string;
   referenceId: string;
   remarks?: string;
+  isDemo?: boolean;
+  timestamp?: number; // UTC ms timestamp for precise filtering
 }
 
 export interface TradingStrategy {

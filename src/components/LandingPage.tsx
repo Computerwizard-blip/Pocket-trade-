@@ -42,9 +42,22 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   
   // Showcase interactive device states
   const [selectedDevice, setSelectedDevice] = useState<'laptop' | 'tablet' | 'phone'>('laptop');
+  const [onlineTraders, setOnlineTraders] = useState<number>(24312);
   const [simulatedPrices, setSimulatedPrices] = useState<number[]>(
     Array.from({ length: 20 }, (_, i) => 640 + Math.sin(i / 1.5) * 5 + Math.random() * 3)
   );
+
+  // Fluctuating online user count realities
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOnlineTraders(prev => {
+        const change = Math.floor(Math.random() * 91) - 45; // -45 to +45 range
+        const next = prev + change;
+        return Math.min(27600, Math.max(23000, next));
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Tick the simulated demo chart on the mockups in building
   useEffect(() => {
@@ -177,7 +190,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         <div className="hidden md:flex items-center gap-6 text-xs font-mono text-slate-400">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>Online: <span className="text-white font-bold">24,312</span> traders</span>
+            <span>Online: <span className="text-white font-bold">{onlineTraders.toLocaleString()}</span> traders</span>
           </div>
           <div className="flex items-center gap-1.5 border-l border-white/10 pl-6">
             <Activity size={13} className="text-cyan-400" />

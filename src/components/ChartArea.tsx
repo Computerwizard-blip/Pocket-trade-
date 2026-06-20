@@ -129,7 +129,38 @@ export default function ChartArea({
   }, []);
 
   // Extract prices raw history
-  const prices = activeAsset.lastPrices;
+  const rawPrices = activeAsset.lastPrices;
+
+  // Scientific, smooth-glide damping coefficients for timeframes
+  // Moves slowly -> slow ('5min', '15min'), slower ('30min', '1h', '2h', '3h'), slowest ('1day')
+  const dampingAlpha: Record<string, number> = {
+    '5s': 1.0,
+    '15s': 1.0,
+    '30s': 1.0,
+    '45s': 1.0,
+    '1min': 1.0,
+    '5min': 0.35,  // slow
+    '15min': 0.25, // slow
+    '30min': 0.12, // slower
+    '1h': 0.08,    // slower
+    '2h': 0.06,    // slower
+    '3h': 0.04,    // slower
+    '1day': 0.015  // slowest
+  };
+
+  const alpha = dampingAlpha[timeframe] || 1.0;
+
+  // Apply scientific Exponential Moving Average (EMA) low-pass filter to price stream.
+  // This dampens high frequency noise, resulting in incredibly smooth and lifelike slow-motion candlesticks at higher durations.
+  const prices: number[] = [];
+  if (rawPrices && rawPrices.length > 0) {
+    prices.push(rawPrices[0]);
+    for (let i = 1; i < rawPrices.length; i++) {
+      prices.push(alpha * rawPrices[i] + (1 - alpha) * prices[i - 1]);
+    }
+  } else {
+    prices.push(...(rawPrices || []));
+  }
 
   // Seconds of live tick history per candlestick depending on timeframe selection
   const secondsPerCandle: Record<string, number> = {
@@ -144,6 +175,7 @@ export default function ChartArea({
     '1h': 3600,
     '2h': 7200,
     '3h': 10800,
+    '1day': 86400,
   };
   const sec = secondsPerCandle[timeframe] || 30;
 

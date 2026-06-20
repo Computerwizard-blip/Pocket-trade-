@@ -271,6 +271,38 @@ export default function App() {
       setRealBalance(balances.real);
     }
 
+    const accountsData = localStorage.getItem("pocket_trade_accounts");
+    if (accountsData) {
+      try {
+        const accountsList = JSON.parse(accountsData);
+        const act = accountsList.find((ac: any) => ac.email.toLowerCase() === email.toLowerCase());
+        if (act) {
+          const now = Date.now();
+          if (act.closedTrades) {
+            const loadedTrades = act.closedTrades.filter((t: any) => {
+              if (t.isDemo) return now - t.createdAt < 24 * 60 * 60 * 1000;
+              return true;
+            });
+            setClosedTrades(loadedTrades);
+          } else {
+            setClosedTrades([]);
+          }
+          if (act.transactions) {
+            const loadedTxts = act.transactions.filter((tx: any) => {
+              if (tx.isDemo) {
+                const time = tx.timestamp || (tx.createdAt ? new Date(tx.createdAt).getTime() : 0);
+                if (time) return now - time < 24 * 60 * 60 * 1000;
+              }
+              return true;
+            });
+            setTransactions(loadedTxts);
+          } else {
+            setTransactions(INITIAL_TRANSACTIONS);
+          }
+        }
+      } catch (e) {}
+    }
+
     setToastMessage({
       id: "toast-login-" + Date.now(),
       text: `Sync Complete! Welcome back to the PocketOption desk, ${name}!`,
@@ -291,10 +323,24 @@ export default function App() {
       }
       const updatedList = accountsList.map((acc: any) => {
         if (acc.email.toLowerCase() === currentUser.email.toLowerCase()) {
+          const now = Date.now();
+          const savedTrades = closedTrades.filter((t: any) => {
+            if (t.isDemo) return now - t.createdAt < 24 * 60 * 60 * 1000;
+            return true;
+          });
+          const savedTx = transactions.filter((tx: any) => {
+            if (tx.isDemo) {
+              const time = tx.timestamp || (tx.createdAt ? new Date(tx.createdAt).getTime() : 0);
+              if (time) return now - time < 24 * 60 * 60 * 1000;
+            }
+            return true;
+          });
           return {
             ...acc,
             demoBalance: demoBalance,
             realBalance: realBalance,
+            closedTrades: savedTrades,
+            transactions: savedTx
           };
         }
         return acc;
@@ -355,27 +401,6 @@ export default function App() {
     });
   };
 
-  // Sync live balance transitions to persistent memory in real-time
-  useEffect(() => {
-    if (!currentUser) return;
-    const accountsData = localStorage.getItem("pocket_trade_accounts");
-    if (accountsData) {
-      try {
-        const accountsList = JSON.parse(accountsData);
-        const updated = accountsList.map((acc: any) => {
-          if (acc.email.toLowerCase() === currentUser.email.toLowerCase()) {
-            return {
-              ...acc,
-              demoBalance,
-              realBalance,
-            };
-          }
-          return acc;
-        });
-        localStorage.setItem("pocket_trade_accounts", JSON.stringify(updated));
-      } catch (e) {}
-    }
-  }, [demoBalance, realBalance, currentUser]);
 
   // Asset registries
   const [assets, setAssets] = useState<Asset[]>(() => {
@@ -421,9 +446,89 @@ export default function App() {
 
   // Trades and Transaction histories
   const [activeTrades, setActiveTrades] = useState<Trade[]>([]);
-  const [closedTrades, setClosedTrades] = useState<Trade[]>([]);
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(INITIAL_TRANSACTIONS);
+  const [closedTrades, setClosedTrades] = useState<Trade[]>(() => {
+    const saved = localStorage.getItem("pocket_trade_current_user");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const accountsData = localStorage.getItem("pocket_trade_accounts");
+        if (accountsData) {
+          const accountsList = JSON.parse(accountsData);
+          const act = accountsList.find((ac: any) => ac.email.toLowerCase() === parsed.email.toLowerCase());
+          if (act && act.closedTrades) {
+            const now = Date.now();
+            return act.closedTrades.filter((t: any) => {
+              if (t.isDemo) {
+                return now - t.createdAt < 24 * 60 * 60 * 1000;
+              }
+              return true;
+            });
+          }
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    const saved = localStorage.getItem("pocket_trade_current_user");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const accountsData = localStorage.getItem("pocket_trade_accounts");
+        if (accountsData) {
+          const accountsList = JSON.parse(accountsData);
+          const act = accountsList.find((ac: any) => ac.email.toLowerCase() === parsed.email.toLowerCase());
+          if (act && act.transactions) {
+            const now = Date.now();
+            return act.transactions.filter((tx: any) => {
+              if (tx.isDemo) {
+                const time = tx.timestamp || (tx.createdAt ? new Date(tx.createdAt).getTime() : 0);
+                if (time) return now - time < 24 * 60 * 60 * 1000;
+              }
+              return true;
+            });
+          }
+        }
+      } catch (e) {}
+    }
+    return INITIAL_TRANSACTIONS;
+  });
+
+  // Sync live balance transitions, closed trades, and transactions to persistent memory in real-time
+  useEffect(() => {
+    if (!currentUser) return;
+    const accountsData = localStorage.getItem("pocket_trade_accounts");
+    if (accountsData) {
+      try {
+        const accountsList = JSON.parse(accountsData);
+        const updated = accountsList.map((acc: any) => {
+          if (acc.email.toLowerCase() === currentUser.email.toLowerCase()) {
+            const now = Date.now();
+            const savedTrades = closedTrades.filter((t: any) => {
+              if (t.isDemo) return now - t.createdAt < 24 * 60 * 60 * 1000;
+              return true;
+            });
+            const savedTx = transactions.filter((tx: any) => {
+              if (tx.isDemo) {
+                const time = tx.timestamp || (tx.createdAt ? new Date(tx.createdAt).getTime() : 0);
+                if (time) return now - time < 24 * 60 * 60 * 1000;
+              }
+              return true;
+            });
+            return {
+              ...acc,
+              demoBalance,
+              realBalance,
+              closedTrades: savedTrades,
+              transactions: savedTx,
+            };
+          }
+          return acc;
+        });
+        localStorage.setItem("pocket_trade_accounts", JSON.stringify(updated));
+      } catch (e) {}
+    }
+  }, [demoBalance, realBalance, closedTrades, transactions, currentUser]);
 
   // Copy trading master logs
   const [topTraders, setTopTraders] = useState<TopTrader[]>(TOP_TRADERS);
@@ -571,8 +676,17 @@ export default function App() {
               setRealBalance((prev) => prev + payout);
             }
 
-            // Append to completed history
-            setClosedTrades((prev) => [updatedTrade, ...prev]);
+            // Append to completed history and apply helper daily record limit for Demo accounts
+            setClosedTrades((prev) => {
+              const now = Date.now();
+              const nextTrades = [updatedTrade, ...prev];
+              return nextTrades.filter((t) => {
+                if (t.isDemo) {
+                  return now - t.createdAt < 24 * 60 * 60 * 1000;
+                }
+                return true;
+              });
+            });
 
             // Dispatch visual HUD congratulations
             const finalProfit = isWon
@@ -1144,7 +1258,17 @@ export default function App() {
                 else setRealBalance((prev) => prev + amt);
               }}
               onAddTransaction={(tx) =>
-                setTransactions((prev) => [tx, ...prev])
+                setTransactions((prev) => {
+                  const now = Date.now();
+                  const nextTx = [tx, ...prev];
+                  return nextTx.filter((t) => {
+                    if (t.isDemo) {
+                      const time = t.timestamp || (t.createdAt ? new Date(t.createdAt).getTime() : 0);
+                      if (time) return now - time < 24 * 60 * 60 * 1000;
+                    }
+                    return true;
+                  });
+                })
               }
             />
           </div>
@@ -1228,13 +1352,24 @@ export default function App() {
               isDemo={isDemo}
               transactions={transactions}
               onAddTransaction={(tx) =>
-                setTransactions((prev) => [tx, ...prev])
+                setTransactions((prev) => {
+                  const now = Date.now();
+                  const nextTx = [tx, ...prev];
+                  return nextTx.filter((t) => {
+                    if (t.isDemo) {
+                      const time = t.timestamp || (t.createdAt ? new Date(t.createdAt).getTime() : 0);
+                      if (time) return now - time < 24 * 60 * 60 * 1000;
+                    }
+                    return true;
+                  });
+                })
               }
               onUpdateBalance={(amt) => {
                 if (isDemo) setDemoBalance((prev) => prev + amt);
                 else setRealBalance((prev) => prev + amt);
               }}
               onOpenSupport={() => setIsSupportOpen(true)}
+              onToggleDemo={handleToggleDemoSetting}
             />
           </div>
         );

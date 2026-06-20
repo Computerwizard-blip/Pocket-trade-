@@ -29,6 +29,7 @@ interface CashierTabProps {
   onAddTransaction: (tx: Transaction) => void;
   onUpdateBalance: (amountToAdd: number) => void;
   onOpenSupport: () => void;
+  onToggleDemo?: (val: boolean) => void;
 }
 
 export default function CashierTab({
@@ -37,7 +38,8 @@ export default function CashierTab({
   transactions,
   onAddTransaction,
   onUpdateBalance,
-  onOpenSupport
+  onOpenSupport,
+  onToggleDemo
 }: CashierTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<'deposit' | 'withdraw' | 'history'>('deposit');
   const [payMethod, setPayMethod] = useState<'mpesa' | 'card' | 'crypto'>('mpesa');
@@ -66,6 +68,11 @@ export default function CashierTab({
     setErrorMessage(null);
     setSuccessMessage(null);
  
+    if (isDemo) {
+      setErrorMessage('Depositing funds is only allowed in your Real Account. Please switch to your Real Account to start trading with real assets.');
+      return;
+    }
+
     const amountNum = parseFloat(depositAmount);
     if (isNaN(amountNum) || amountNum < 5) {
       setErrorMessage('Minimum deposit amount is $5.');
@@ -108,7 +115,9 @@ export default function CashierTab({
       }),
       phoneOrWallet: payMethod === 'mpesa' ? phoneNumber : payMethod === 'card' ? 'Card Ending 9081' : 'TRC-20 USDT Wallet',
       referenceId,
-      remarks: remarksText
+      remarks: remarksText,
+      isDemo,
+      timestamp: Date.now()
     };
 
     onAddTransaction(newTx);
@@ -159,7 +168,9 @@ export default function CashierTab({
       }),
       phoneOrWallet: walletPhone,
       referenceId,
-      remarks: 'Withdrawal settlement undergoing broker verifications.'
+      remarks: 'Withdrawal settlement undergoing broker verifications.',
+      isDemo,
+      timestamp: Date.now()
     };
 
     onAddTransaction(newTx);
@@ -323,142 +334,172 @@ export default function CashierTab({
             </div>
 
             {/* Core Deposit form inputs */}
-            <form id="deposit-interactive-form" onSubmit={handleDeposit} className="lg:col-span-7 flex flex-col gap-4 bg-[#11171d] p-5 rounded-2xl border border-[#222d38]">
-              <span id="deposit-header-txt" className="text-xs font-bold text-[#f0f2f5] font-sans">Required Deposit Information</span>
-              
-              {/* Presets and entry fields */}
-              <div id="dep-amount-grp" className="flex flex-col gap-1.5">
-                <label className="text-xs text-gray-400">Specifying Amount ($)</label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono text-gray-400 font-bold">$</span>
-                  <input
-                    type="number"
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    className="w-full bg-[#151c22] border border-[#222e38] rounded-xl pl-8 pr-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400"
-                    placeholder="Enter amount"
-                    required
-                  />
+            {isDemo ? (
+              <div id="demo-deposit-restricted-card" className="lg:col-span-7 flex flex-col items-center justify-center text-center gap-5 bg-[#11171d]/60 p-6 md:p-8 rounded-2xl border border-amber-500/20 backdrop-blur-sm self-stretch min-h-[350px]">
+                <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <AlertCircle size={28} className="animate-pulse" />
                 </div>
-                
-                {/* Presets Grid */}
-                <div className="grid grid-cols-6 gap-1 mt-1.5">
-                  {presets.map(p => (
-                    <button
-                      key={`dep-preset-${p}`}
-                      type="button"
-                      onClick={() => setDepositAmount(p)}
-                      className={`py-1.5 font-mono text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
-                        depositAmount === p 
-                          ? 'bg-amber-400 border-amber-400 text-[#0b0e11]' 
-                          : 'bg-[#151c22] border-[#202a33] text-gray-400 hover:text-white hover:bg-[#1a232b]'
-                      }`}
-                    >
-                      ${p}
-                    </button>
-                  ))}
+                <div className="flex flex-col gap-2 max-w-sm">
+                  <h3 className="text-base font-bold text-[#f0f2f5] font-sans">Demo Account Restricted</h3>
+                  <p className="text-xs text-gray-400 leading-relaxed font-sans">
+                    You cannot deposit funds in a Demo account. Deposits, promotional codes, and live bonuses are only applicable to your <span className="text-emerald-400 font-bold">Real Account</span>.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2.5 w-full max-w-xs mt-1">
+                  <button
+                    type="button"
+                    onClick={() => onToggleDemo?.(false)}
+                    className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-black font-sans font-bold rounded-xl text-center shadow-lg shadow-amber-400/10 cursor-pointer transition-all text-xs"
+                  >
+                    Switch to Real Account to Deposit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onOpenSupport}
+                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-sans font-medium rounded-xl text-center transition-colors text-xs"
+                  >
+                    Contact Support
+                  </button>
                 </div>
               </div>
-
-              {/* M-Pesa Gateway options */}
-              {payMethod === 'mpesa' && (
-                <div id="mpesa-field-details" className="flex flex-col gap-1.5 animate-fade-in">
-                  <label className="text-xs text-gray-400 flex items-center justify-between">
-                    <span>M-PESA Active Phone Number</span>
-                    <span className="font-mono text-[10px] text-amber-500 font-medium">Automatic Push STK PIN Dialog</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400"
-                    placeholder="+254 7XX XXX XXX"
-                    required
-                  />
-                </div>
-              )}
-
-              {/* Cards options */}
-              {payMethod === 'card' && (
-                <div id="card-field-details" className="flex flex-col gap-3 animate-fade-in">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-gray-400">Card Number (Mock input)</label>
+            ) : (
+              <form id="deposit-interactive-form" onSubmit={handleDeposit} className="lg:col-span-7 flex flex-col gap-4 bg-[#11171d] p-5 rounded-2xl border border-[#222d38]">
+                <span id="deposit-header-txt" className="text-xs font-bold text-[#f0f2f5] font-sans">Required Deposit Information</span>
+                
+                {/* Presets and entry fields */}
+                <div id="dep-amount-grp" className="flex flex-col gap-1.5">
+                  <label className="text-xs text-gray-400">Specifying Amount ($)</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono text-gray-400 font-bold">$</span>
                     <input
-                      type="text"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400"
-                      placeholder="XXXX XXXX XXXX XXXX"
+                      type="number"
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(e.target.value)}
+                      className="w-full bg-[#151c22] border border-[#222e38] rounded-xl pl-8 pr-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400"
+                      placeholder="Enter amount"
                       required
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  
+                  {/* Presets Grid */}
+                  <div className="grid grid-cols-6 gap-1 mt-1.5">
+                    {presets.map(p => (
+                      <button
+                        key={`dep-preset-${p}`}
+                        type="button"
+                        onClick={() => setDepositAmount(p)}
+                        className={`py-1.5 font-mono text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                          depositAmount === p 
+                            ? 'bg-amber-400 border-amber-400 text-[#0b0e11]' 
+                            : 'bg-[#151c22] border-[#202a33] text-gray-400 hover:text-white hover:bg-[#1a232b]'
+                        }`}
+                      >
+                        ${p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* M-Pesa Gateway options */}
+                {payMethod === 'mpesa' && (
+                  <div id="mpesa-field-details" className="flex flex-col gap-1.5 animate-fade-in">
+                    <label className="text-xs text-gray-400 flex items-center justify-between">
+                      <span>M-PESA Active Phone Number</span>
+                      <span className="font-mono text-[10px] text-amber-500 font-medium">Automatic Push STK PIN Dialog</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400"
+                      placeholder="+254 7XX XXX XXX"
+                      required
+                    />
+                  </div>
+                )}
+
+                {/* Cards options */}
+                {payMethod === 'card' && (
+                  <div id="card-field-details" className="flex flex-col gap-3 animate-fade-in">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-gray-400">Expiry Month/Year</label>
+                      <label className="text-xs text-gray-400">Card Number (Mock input)</label>
                       <input
                         type="text"
-                        defaultValue="12/29"
-                        className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400 text-center"
-                        placeholder="MM/YY"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value)}
+                        className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400"
+                        placeholder="XXXX XXXX XXXX XXXX"
                         required
                       />
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-gray-400">CVC Code</label>
-                      <input
-                        type="password"
-                        defaultValue="382"
-                        className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400 text-center"
-                        placeholder="XXX"
-                        required
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-gray-400">Expiry Month/Year</label>
+                        <input
+                          type="text"
+                          defaultValue="12/29"
+                          className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400 text-center"
+                          placeholder="MM/YY"
+                          required
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-gray-400">CVC Code</label>
+                        <input
+                          type="password"
+                          defaultValue="382"
+                          className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400 text-center"
+                          placeholder="XXX"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Cryptos options info panel */}
-              {payMethod === 'crypto' && (
-                <div id="crypto-field-details" className="bg-[#151c22] p-3 rounded-lg border border-[#222e38] flex flex-col gap-2 animate-fade-in">
-                  <span className="text-[11px] font-mono font-bold text-amber-400">USDT (TRC-20 Network) Destination:</span>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs text-gray-300 select-all truncate">TYuYg63uA7GjH12zXcn69P88fLqpRwq9K1</span>
-                    <button 
-                      type="button"
-                      onClick={() => copyRef('TYuYg63uA7GjH12zXcn69P88fLqpRwq9K1')}
-                      className="text-amber-500 hover:text-amber-400 p-1 bg-slate-900 rounded font-bold text-[10px] uppercase flex items-center gap-1 shrink-0 cursor-pointer"
-                    >
-                      <Copy size={11} />
-                      {copiedId === 'TYuYg63uA7GjH12zXcn69P88fLqpRwq9K1' ? 'Copied' : 'Copy'}
-                    </button>
+                {/* Cryptos options info panel */}
+                {payMethod === 'crypto' && (
+                  <div id="crypto-field-details" className="bg-[#151c22] p-3 rounded-lg border border-[#222e38] flex flex-col gap-2 animate-fade-in">
+                    <span className="text-[11px] font-mono font-bold text-amber-400">USDT (TRC-20 Network) Destination:</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs text-gray-300 select-all truncate">TYuYg63uA7GjH12zXcn69P88fLqpRwq9K1</span>
+                      <button 
+                        type="button"
+                        onClick={() => copyRef('TYuYg63uA7GjH12zXcn69P88fLqpRwq9K1')}
+                        className="text-amber-500 hover:text-amber-400 p-1 bg-slate-900 rounded font-bold text-[10px] uppercase flex items-center gap-1 shrink-0 cursor-pointer"
+                      >
+                        <Copy size={11} />
+                        {copiedId === 'TYuYg63uA7GjH12zXcn69P88fLqpRwq9K1' ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
                   </div>
+                )}
+
+                {/* Promo code booster row */}
+                <div id="bonus-field-row" className="flex flex-col gap-1.5 mt-1">
+                  <label className="text-[11px] text-gray-400 flex items-center justify-between">
+                    <span>Enter Promo / Promotion Code for deposit match</span>
+                    <span className="text-amber-400 font-bold font-mono">Try: WELCOME100 or POCKETGOLD</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={bonusCode}
+                    onChange={(e) => setBonusCode(e.target.value)}
+                    className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-2.5 font-mono text-xs text-[#f0f2f5] focus:outline-none focus:border-amber-400"
+                    placeholder="WELCOME100 (100% boost) or POCKETGOLD (50% boost)"
+                  />
                 </div>
-              )}
 
-              {/* Promo code booster row */}
-              <div id="bonus-field-row" className="flex flex-col gap-1.5 mt-1">
-                <label className="text-[11px] text-gray-400 flex items-center justify-between">
-                  <span>Enter Promo / Promotion Code for deposit match</span>
-                  <span className="text-amber-400 font-bold font-mono">Try: WELCOME100 or POCKETGOLD</span>
-                </label>
-                <input
-                  type="text"
-                  value={bonusCode}
-                  onChange={(e) => setBonusCode(e.target.value)}
-                  className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-2.5 font-mono text-xs text-[#f0f2f5] focus:outline-none focus:border-amber-400"
-                  placeholder="WELCOME100 (100% boost) or POCKETGOLD (50% boost)"
-                />
-              </div>
-
-              {/* Submit Trigger */}
-              <button
-                type="submit"
-                id="deposit-complete-trigger"
-                className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-black font-sans font-bold rounded-xl text-center shadow-lg shadow-amber-500/10 cursor-pointer hover:scale-[1.01] active:scale-100 transition-all text-sm mt-2"
-              >
-                Simulate Direct Deposit
-              </button>
-            </form>
+                {/* Submit Trigger */}
+                <button
+                  type="submit"
+                  id="deposit-complete-trigger"
+                  className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-black font-sans font-bold rounded-xl text-center shadow-lg shadow-amber-500/10 cursor-pointer hover:scale-[1.01] active:scale-100 transition-all text-sm mt-2"
+                >
+                  Simulate Direct Deposit
+                </button>
+              </form>
+            )}
           </div>
         )}
 
