@@ -43,7 +43,7 @@ export default function CashierTab({
   const [payMethod, setPayMethod] = useState<'mpesa' | 'card' | 'crypto'>('mpesa');
   
   // Deposit Fields
-  const [depositAmount, setDepositAmount] = useState<string>('700');
+  const [depositAmount, setDepositAmount] = useState<string>('50');
   const [phoneNumber, setPhoneNumber] = useState<string>('+254 748 480904');
   const [cardNumber, setCardNumber] = useState<string>('4342 9874 1254 9081');
   const [bonusCode, setBonusCode] = useState<string>('');
@@ -58,17 +58,17 @@ export default function CashierTab({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const presets = ['300', '700', '1500', '3000', '5000', '10000'];
-
+ 
+  const presets = ['5', '10', '25', '50', '100', '500'];
+ 
   const handleDeposit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
-
+ 
     const amountNum = parseFloat(depositAmount);
-    if (isNaN(amountNum) || amountNum < 300) {
-      setErrorMessage('Minimum deposit amount is K$300.');
+    if (isNaN(amountNum) || amountNum < 5) {
+      setErrorMessage('Minimum deposit amount is $5.');
       return;
     }
 
@@ -126,8 +126,8 @@ export default function CashierTab({
     setSuccessMessage(null);
 
     const amountNum = parseFloat(withdrawAmount);
-    if (isNaN(amountNum) || amountNum < 700) {
-      setErrorMessage('Minimum withdrawal threshold is K$700.');
+    if (isNaN(amountNum) || amountNum < 10) {
+      setErrorMessage('Minimum withdrawal threshold is $10.');
       return;
     }
 
@@ -267,7 +267,7 @@ export default function CashierTab({
                   }`}>
                     M-PESA Gateways
                   </span>
-                  <span id="gateway-mpesa-desc" className="text-[10px] text-gray-400 font-mono mt-0.5">Instant • Min K$300 • Max $130,000</span>
+                  <span id="gateway-mpesa-desc" className="text-[10px] text-gray-400 font-mono mt-0.5">Instant • Min $5 • Max $130,000</span>
                 </div>
               </button>
 
@@ -486,7 +486,7 @@ export default function CashierTab({
                   value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                   className="w-full bg-[#151c22] border border-[#222e38] rounded-xl px-4 py-3 font-mono text-sm text-[#f0f2f5] focus:outline-none focus:border-amber-400"
-                  placeholder="Min K$700"
+                  placeholder="Min $10"
                   required
                 />
               </div>

@@ -259,8 +259,8 @@ export const ECONOMIC_EVENTS: EconomicEvent[] = [
 // Master list of potential copy traders to rotate weekly.
 const MASTER_TRADERS_POOL: Omit<TopTrader, 'rank' | 'isCopied'>[] = [
   {
-    name: "Wycliffe Ochieng",
-    country: "KE",
+    name: "Jaden Vance",
+    country: "US",
     totalTrades: 1482,
     winRate: 88.4,
     profit: 14120.50,
@@ -277,8 +277,8 @@ const MASTER_TRADERS_POOL: Omit<TopTrader, 'rank' | 'isCopied'>[] = [
     statusText: "📈 Trend follower on EUR/USD IDX."
   },
   {
-    name: "Njuguna Ndung'u",
-    country: "KE",
+    name: "Malik Jenkins",
+    country: "US",
     totalTrades: 942,
     winRate: 82.9,
     profit: 7840.40,
@@ -295,8 +295,8 @@ const MASTER_TRADERS_POOL: Omit<TopTrader, 'rank' | 'isCopied'>[] = [
     statusText: "📊 Volatility expert on Stocks."
   },
   {
-    name: "Sarah Mwangi",
-    country: "KE",
+    name: "Zane Thorne",
+    country: "UK",
     totalTrades: 753,
     winRate: 79.8,
     profit: 4890.20,
@@ -304,8 +304,8 @@ const MASTER_TRADERS_POOL: Omit<TopTrader, 'rank' | 'isCopied'>[] = [
     statusText: "🔮 Pivot indicator user."
   },
   {
-    name: "Kiprop Bett",
-    country: "KE",
+    name: "Antoine Girard",
+    country: "FR",
     totalTrades: 1102,
     winRate: 84.7,
     profit: 11200.00,
@@ -313,8 +313,8 @@ const MASTER_TRADERS_POOL: Omit<TopTrader, 'rank' | 'isCopied'>[] = [
     statusText: "🌾 Scalping agricultural options."
   },
   {
-    name: "Yuki Tanaka",
-    country: "JP",
+    name: "Mateo Silva",
+    country: "ES",
     totalTrades: 1320,
     winRate: 86.2,
     profit: 10450.80,
@@ -322,8 +322,8 @@ const MASTER_TRADERS_POOL: Omit<TopTrader, 'rank' | 'isCopied'>[] = [
     statusText: "🌸 Ichimoku Cloud specialist."
   },
   {
-    name: "Carlos Mendez",
-    country: "MX",
+    name: "Tyrell Jackson",
+    country: "US",
     totalTrades: 994,
     winRate: 80.5,
     profit: 7200.30,
@@ -358,8 +358,8 @@ const MASTER_TRADERS_POOL: Omit<TopTrader, 'rank' | 'isCopied'>[] = [
     statusText: "🥨 Automated volume logic trader."
   },
   {
-    name: "Kamau Githinji",
-    country: "KE",
+    name: "Amara Okafor",
+    country: "UK",
     totalTrades: 1024,
     winRate: 85.9,
     profit: 9650.00,
@@ -367,8 +367,8 @@ const MASTER_TRADERS_POOL: Omit<TopTrader, 'rank' | 'isCopied'>[] = [
     statusText: "🚀 High-frequency options master."
   },
   {
-    name: "Amara Okafor",
-    country: "NG",
+    name: "Tariq Miller",
+    country: "US",
     totalTrades: 885,
     winRate: 81.7,
     profit: 6780.00,
@@ -385,8 +385,8 @@ const MASTER_TRADERS_POOL: Omit<TopTrader, 'rank' | 'isCopied'>[] = [
     statusText: "⏰ Precise UTC timing scalp options."
   },
   {
-    name: "Yasmine Benali",
-    country: "MA",
+    name: "Yasmine Larsson",
+    country: "SE",
     totalTrades: 690,
     winRate: 77.9,
     profit: 4120.00,

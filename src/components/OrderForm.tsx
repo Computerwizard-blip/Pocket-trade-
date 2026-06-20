@@ -248,31 +248,29 @@ export default function OrderForm({
           </div>
         )}
 
-        {/* UP Trigger Button */}
-        <button
+        {/* UP Trade Profit Projection Block (Static Display Only) */}
+        <div
           id="btn-execute-up"
-          onClick={() => handleSubmit('up')}
-          className="w-full py-4 px-5 rounded-2xl bg-[#10b981] hover:bg-[#34d399] active:bg-[#059669] text-white font-sans font-bold text-center flex items-center justify-between shadow-lg shadow-emerald-500/10 group cursor-pointer hover:scale-[1.01] active:scale-100 transition-all"
+          className="w-full py-4 px-5 rounded-2xl bg-[#10b981] text-white font-sans font-bold flex items-center justify-between shadow-md shadow-emerald-500/5 select-none"
         >
           <div className="flex flex-col items-start leading-none gap-0.5 font-sans">
             <span id="btn-up-header" className="text-[11px] font-mono font-bold tracking-widest text-[#d1fae5]/80 uppercase">BUY (UP)</span>
-            <span id="btn-up-amount" className="text-lg font-extrabold">+$80 Est.</span>
+            <span id="btn-up-amount" className="text-lg font-extrabold">+${potentialProfit.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} Est.</span>
           </div>
-          <ArrowUpCircle size={28} className="text-[#d1fae5] group-hover:translate-y-[-2px] transition-transform" />
-        </button>
+          <ArrowUpCircle size={28} className="text-[#d1fae5]" />
+        </div>
 
-        {/* DOWN Trigger Button */}
-        <button
+        {/* DOWN Trade Profit Projection Block (Static Display Only) */}
+        <div
           id="btn-execute-down"
-          onClick={() => handleSubmit('down')}
-          className="w-full py-4 px-5 rounded-2xl bg-[#f43f5e] hover:bg-[#f87171] active:bg-[#e11d48] text-white font-sans font-bold text-center flex items-center justify-between shadow-lg shadow-rose-500/10 group cursor-pointer hover:scale-[1.01] active:scale-100 transition-all"
+          className="w-full py-4 px-5 rounded-2xl bg-[#f43f5e] text-white font-sans font-bold flex items-center justify-between shadow-md shadow-rose-500/5 select-none"
         >
           <div className="flex flex-col items-start leading-none gap-0.5 font-sans">
             <span id="btn-down-header" className="text-[11px] font-mono font-bold tracking-widest text-[#ffe4e6]/80 uppercase">SELL (DOWN)</span>
-            <span id="btn-down-amount" className="text-lg font-extrabold">+$80 Est.</span>
+            <span id="btn-down-amount" className="text-lg font-extrabold">+${potentialProfit.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} Est.</span>
           </div>
-          <ArrowDownCircle size={28} className="text-[#ffe4e6] group-hover:translate-y-[2px] transition-transform" />
-        </button>
+          <ArrowDownCircle size={28} className="text-[#ffe4e6]" />
+        </div>
 
          {/* Disclaimer Legal footnote */}
         <p id="trading-disclaimer text" className="text-[10px] text-slate-500 text-center leading-normal mt-1.5">
