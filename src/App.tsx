@@ -1637,7 +1637,7 @@ export default function App() {
           </div>
 
           {/* Core full bleed chart view */}
-          <div className="flex-1 min-h-0 relative flex flex-col">
+          <div className="flex-1 min-h-0 max-h-[43vh] relative flex flex-col">
             <ChartArea
               activeAsset={activeAsset}
               activeTrades={activeTrades}
