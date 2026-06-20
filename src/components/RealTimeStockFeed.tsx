@@ -130,7 +130,7 @@ export default function RealTimeStockFeed({ activeAsset, onSelectStock }: RealTi
       });
 
     } catch (err: any) {
-      console.warn('Real stock API error, initiating resilient local simulator loop:', err.message);
+      console.warn('Real stock API error, initiating resilient local fallback loop:', err.message);
       
       // Resilient local simulation matching real stock parameters
       const basePrices: Record<string, { name: string; base: number; high: number; low: number; vol: number }> = {

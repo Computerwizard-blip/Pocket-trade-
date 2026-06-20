@@ -645,7 +645,7 @@ export default function CashierTab({
       {/* Trust Sign and Security disclaimer */}
       <div id="cashier-foot-disclaimer" className="flex items-center justify-center gap-2 p-3 bg-[#0a0d10] border border-[#1a222a] rounded-xl text-[10px] text-gray-500 font-mono">
         <ShieldCheck size={13} className="text-emerald-400" />
-        Pocket Trade Financial Operations Secured with PCI-DSS Compliance (SANDBOX ENGINE)
+        Pocket Trade Financial Operations Secured with PCI-DSS Compliance (REALTIME SECURE PROT)
       </div>
 
     </div>

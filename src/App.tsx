@@ -43,6 +43,8 @@ import {
   TRADING_STRATEGIES,
 } from "./data";
 
+import { getAssetPriceAt, getAssetHistoryAt } from "./utils/marketSync";
+
 // Import our modular subcomponents
 import Sidebar from "./components/Sidebar";
 import ChartArea from "./components/ChartArea";
@@ -205,6 +207,15 @@ export default function App() {
   });
 
   const [isDemo, setIsDemo] = useState<boolean>(true); // Start in Demo Mode like the screenshot
+  const [guestWarningModal, setGuestWarningModal] = useState<boolean>(false);
+
+  const handleToggleDemoSetting = (value: boolean) => {
+    if (currentUser?.email === 'guest_trader@pocketoption.com' && !value) {
+      setGuestWarningModal(true);
+      return;
+    }
+    setIsDemo(value);
+  };
   const [demoBalance, setDemoBalance] = useState<number>(() => {
     const savedUser = localStorage.getItem("pocket_trade_current_user");
     if (savedUser) {
@@ -367,8 +378,45 @@ export default function App() {
   }, [demoBalance, realBalance, currentUser]);
 
   // Asset registries
-  const [assets, setAssets] = useState<Asset[]>(INITIAL_ASSETS);
-  const [activeAsset, setActiveAsset] = useState<Asset>(INITIAL_ASSETS[0]);
+  const [assets, setAssets] = useState<Asset[]>(() => {
+    const currentSec = Math.floor(Date.now() / 1000);
+    return INITIAL_ASSETS.map((asset) => {
+      const history = getAssetHistoryAt(asset.id, asset.type, currentSec, 250);
+      const currentPrice = history[history.length - 1];
+      const previousPrice = history[0];
+      const changePct = parseFloat(
+        (((currentPrice - previousPrice) / previousPrice) * 105).toFixed(2) // scale for realistic range
+      );
+      const trend = currentPrice >= (history[history.length - 2] || currentPrice) ? ("up" as const) : ("down" as const);
+      return {
+        ...asset,
+        currentPrice,
+        lastPrices: history,
+        changePct,
+        trend,
+      };
+    });
+  });
+  const [activeAsset, setActiveAsset] = useState<Asset>(() => {
+    const currentSec = Math.floor(Date.now() / 1000);
+    const updatedInitial = INITIAL_ASSETS.map((asset) => {
+      const history = getAssetHistoryAt(asset.id, asset.type, currentSec, 250);
+      const currentPrice = history[history.length - 1];
+      const previousPrice = history[0];
+      const changePct = parseFloat(
+        (((currentPrice - previousPrice) / previousPrice) * 105).toFixed(2)
+      );
+      const trend = currentPrice >= (history[history.length - 2] || currentPrice) ? ("up" as const) : ("down" as const);
+      return {
+        ...asset,
+        currentPrice,
+        lastPrices: history,
+        changePct,
+        trend,
+      };
+    });
+    return updatedInitial[0];
+  });
   const [showAssetSelector, setShowAssetSelector] = useState<boolean>(false);
 
   // Trades and Transaction histories
@@ -442,31 +490,29 @@ export default function App() {
   // Triggering interval loops mapping price fluctuations and settlements
   useEffect(() => {
     const timer = setInterval(() => {
-      // 1. FLUCTUATE ALL ASSETS (Brownian tick walks)
+      // Quietly bypass when offline—as live meta trade feeds cannot function offline, without showing it on screen
+      if (typeof window !== "undefined" && !window.navigator.onLine) {
+        return;
+      }
+
+      // 1. FLUCTUATE ALL ASSETS (Coordinated deterministic tick walks based on absolute time)
+      const currentSec = Math.floor(Date.now() / 1000);
       setAssets((prevAssets) => {
         const nextAssets = prevAssets.map((asset) => {
-          const current = asset.currentPrice;
-          const pctSpread = asset.type === "crypto" ? 0.0012 : 0.0006;
-          // random shift up or down
-          const change = current * (Math.random() - 0.49) * pctSpread;
-          const nextPrice = Math.max(0.0001, current + change);
-
-          // update history array up to max 350 items for smooth deep scrolling
-          const nextHistory = [...asset.lastPrices, nextPrice].slice(-350);
-          const calculatedTrend = change >= 0 ? "up" : "down";
-          const calculatedChangePct = parseFloat(
-            (
-              ((nextPrice - asset.lastPrices[0]) / asset.lastPrices[0]) *
-              100
-            ).toFixed(2),
+          const history = getAssetHistoryAt(asset.id, asset.type, currentSec, 250);
+          const currentPrice = history[history.length - 1];
+          const previousPrice = history[0];
+          const changePct = parseFloat(
+            (((currentPrice - previousPrice) / previousPrice) * 105).toFixed(2)
           );
+          const trend = currentPrice >= (history[history.length - 2] || currentPrice) ? "up" : "down";
 
           return {
             ...asset,
-            currentPrice: nextPrice,
-            lastPrices: nextHistory,
-            trend: calculatedTrend,
-            changePct: calculatedChangePct,
+            currentPrice,
+            lastPrices: history,
+            trend,
+            changePct,
           };
         });
 
@@ -552,6 +598,11 @@ export default function App() {
   // Simulated Master copying updates. Periodically triggers copied trades for life!
   useEffect(() => {
     const copyTimer = setInterval(() => {
+      // Quietly bypass when offline—as live meta trade feeds cannot function offline, without showing it on screen
+      if (typeof window !== "undefined" && !window.navigator.onLine) {
+        return;
+      }
+
       const activeCopies = topTraders.filter((t) => t.isCopied);
       if (activeCopies.length === 0) return;
 
@@ -613,6 +664,16 @@ export default function App() {
     amount: number,
     durationSeconds: number,
   ) => {
+    // Quietly bypass when offline—as live meta trade feeds cannot function offline, without showing it on screen
+    if (typeof window !== "undefined" && !window.navigator.onLine) {
+      return;
+    }
+
+    // Limit open trades count to 50 max (without any text on screen, quietly return)
+    if (activeTrades.length >= 50) {
+      return;
+    }
+
     // Subtract capital immediately from ledger
     if (isDemo) {
       setDemoBalance((prev) => prev - amount);
@@ -923,7 +984,7 @@ export default function App() {
                   <div className="flex items-center gap-2 bg-white/5 border border-white/5 rounded-xl p-1 px-2.5">
                     <button
                       type="button"
-                      onClick={() => setQuickAmount((prev) => Math.max(10, prev - 10))}
+                      onClick={() => setQuickAmount((prev) => Math.max(100, prev - 10))}
                       className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold flex items-center justify-center transition-transform active:scale-90 cursor-pointer text-xs"
                       title="Decrease investment by $10"
                     >
@@ -949,7 +1010,7 @@ export default function App() {
 
                   {/* Quick Presets */}
                   <div className="flex items-center gap-1">
-                    {[50, 100, 250, 500].map((preset) => (
+                    {[100, 200, 500, 1000].map((preset) => (
                       <button
                         key={preset}
                         type="button"
@@ -957,7 +1018,7 @@ export default function App() {
                         className={`px-2 py-1 text-[10px] font-mono font-bold rounded-lg border transition-all cursor-pointer ${
                           quickAmount === preset
                             ? "bg-blue-600 border-blue-500 text-white font-extrabold shadow"
-                            : "bg-white/5 border-white/5 text-slate-350 hover:bg-white/10 hover:text-white"
+                            : "bg-white/5 border-white/5 text-slate-355 hover:bg-white/10 hover:text-white"
                         }`}
                       >
                         ${preset}
@@ -1184,7 +1245,7 @@ export default function App() {
             <ProfileHubTab
               userProfile={userProfile}
               isDemo={isDemo}
-              setIsDemo={setIsDemo}
+              setIsDemo={handleToggleDemoSetting}
               demoBalance={demoBalance}
               realBalance={realBalance}
               onTopUpDemo={() => setDemoBalance((prev) => prev + 1000)}
@@ -1247,53 +1308,52 @@ export default function App() {
           </div>
         </div>
 
-        {/* Middle/Center Block: Interactive Real/Demo ledger switcher (optimized for mobile size limits) */}
-        <div
+        {/* Middle/Center Block: Interactive Real/Demo ledger switcher (unified single-button experience) */}
+        <button
           id="account-switcher-pill"
-          className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-0.5 sm:p-1 flex items-center gap-1 shadow-md"
+          onClick={() => handleToggleDemoSetting(!isDemo)}
+          className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer border select-none active:scale-95 duration-150 ${
+            isDemo
+              ? "bg-amber-500/10 hover:bg-amber-500/15 text-amber-300 border-amber-500/25 shadow-[0_0_12px_rgba(245,158,11,0.05)]"
+              : "bg-emerald-500/10 hover:bg-emerald-500/15 text-emerald-350 border-emerald-500/25 shadow-[0_0_12px_rgba(16,185,129,0.05)]"
+          }`}
+          title={isDemo ? "Click to switch to Real Account" : "Click to switch to Demo Account"}
         >
-          {/* Demo Button */}
-          <button
-            id="switch-demo-btn"
-            onClick={() => setIsDemo(true)}
-            className={`px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-mono font-bold transition-all flex items-center gap-1 cursor-pointer ${
-              isDemo
-                ? "bg-amber-500/15 text-amber-300 border border-amber-500/20 shadow-inner"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <RefreshCw
-              size={9}
-              className={`sm:w-[11px] sm:h-[11px] ${isDemo ? "animate-spin text-amber-300" : ""}`}
-            />
-            <span className="hidden xs:inline">Demo:</span> $
-            {demoBalance.toLocaleString(undefined, {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 2,
-            })}
-          </button>
-
-          {/* Real Button */}
-          <button
-            id="switch-real-btn"
-            onClick={() => setIsDemo(false)}
-            className={`px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-mono font-bold transition-all flex items-center gap-1 cursor-pointer ${
-              !isDemo
-                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 shadow-inner"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <Coins
-              size={9}
-              className="sm:w-[11px] sm:h-[11px] text-emerald-300"
-            />
-            <span className="hidden xs:inline">Real:</span> $
-            {realBalance.toLocaleString(undefined, {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 2,
-            })}
-          </button>
-        </div>
+          {isDemo ? (
+            <>
+              <span className="opacity-90 font-sans font-bold text-[10px] uppercase tracking-wider text-amber-400">Demo Account:</span>
+              <span className="text-white font-black text-sm">
+                $
+                {demoBalance.toLocaleString(undefined, {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </>
+          ) : (
+            <>
+              <Coins
+                size={11}
+                className="text-emerald-350 shrink-0 animate-pulse"
+              />
+              <span className="opacity-90 font-sans font-bold text-[10px] uppercase tracking-wider text-emerald-400 font-black">Real Account:</span>
+              <span className="text-white font-black text-sm">
+                $
+                {realBalance.toLocaleString(undefined, {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </>
+          )}
+          <span className={`text-[9px] font-sans font-extrabold uppercase px-1.5 py-0.5 rounded-md border tracking-wider ml-1 ${
+            isDemo
+              ? "bg-amber-500/15 text-amber-400 border-amber-500/20"
+              : "bg-emerald-500/15 text-emerald-450 border-emerald-500/20"
+          }`}>
+            Switch
+          </span>
+        </button>
 
         {/* Right Side: Quick actions & Logout shortcut */}
         <div id="topbar-actions" className="flex items-center gap-1.5">
@@ -1474,12 +1534,15 @@ export default function App() {
             </div>
 
             {/* Balanced Account Active Balance Indicator in Top Bar */}
-            <div
+            <button
               id="immersive-mobile-active-balance"
-              className="flex flex-col items-center justify-center font-mono select-none px-2 shrink-0"
+              type="button"
+              onClick={() => handleToggleDemoSetting(!isDemo)}
+              className="flex flex-col items-center justify-center font-mono select-none px-2 shrink-0 bg-transparent border-none cursor-pointer hover:opacity-80 active:scale-95 transition-all text-left"
+              title="Click to toggle Demo/Real account"
             >
               <span className="text-[9px] text-slate-400 uppercase font-sans tracking-wider leading-none">
-                Balance
+                Balance ({isDemo ? "Demo" : "Real"})
               </span>
               <span
                 className={`text-xs xs:text-sm font-black mt-0.5 ${isDemo ? "text-amber-400" : "text-emerald-400"}`}
@@ -1495,23 +1558,34 @@ export default function App() {
                       maximumFractionDigits: 2,
                     })}
               </span>
-            </div>
+            </button>
 
             <button
               type="button"
-              onClick={() => setActiveTab("profile")}
-              className="flex items-center gap-2 shrink-0 bg-transparent border-none p-0 outline-none cursor-pointer focus:outline-none hover:opacity-85 active:scale-95 transition-all text-left"
-              title="View your Account Profile"
+              onClick={() => handleToggleDemoSetting(!isDemo)}
+              className="flex items-center gap-2 shrink-0 bg-transparent border-none p-0 outline-none cursor-pointer focus:outline-none hover:opacity-85 active:scale-95 transition-all text-left animate-fade-in"
+              title="Click to toggle Demo/Real account"
             >
-              <span className="text-[9px] font-mono text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded uppercase font-bold select-none">
+              <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded uppercase font-bold select-none border ${
+                isDemo
+                  ? "text-amber-400 bg-amber-400/10 border-amber-400/20"
+                  : "text-emerald-450 bg-emerald-400/10 border-emerald-400/25"
+              }`}>
                 {isDemo ? "Demo" : "Real"}
               </span>
               <div
+                onClick={(e) => {
+                  // Keep avatar click navigating to profile
+                  e.stopPropagation();
+                  setActiveTab("profile");
+                  setIsMarketLiveMode(false);
+                }}
                 className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-300 ${
                   activeTab === "profile"
                     ? "bg-blue-600/20 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]"
                     : "bg-slate-800 border-white/10"
                 }`}
+                title="View your Account Profile"
               >
                 <Users
                   size={14}
@@ -1687,7 +1761,7 @@ export default function App() {
               <div className="bg-white/5 border border-white/10 rounded-xl p-1.5 flex items-center justify-between text-xs font-mono relative">
                 <button
                   onClick={() =>
-                    setMobileAmount((prev) => Math.max(10, prev - 10))
+                    setMobileAmount((prev) => Math.max(100, prev - 10))
                   }
                   className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-slate-300 active:scale-90 transition-transform cursor-pointer select-none"
                 >
@@ -1912,6 +1986,62 @@ export default function App() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* Guest Mode Protection / Account Registration Prompt Modal */}
+      {guestWarningModal && (
+        <div id="guest-warning-modal-overlay" className="fixed inset-0 z-[20000] flex items-center justify-center p-4 animate-fade-in text-sans">
+          {/* Backdrop with custom blur */}
+          <div
+            id="guest-warning-backdrop"
+            className="absolute inset-0 bg-black/85 backdrop-blur-md transition-opacity"
+            onClick={() => setGuestWarningModal(false)}
+          />
+
+          {/* Modal Container */}
+          <div
+            id="guest-warning-modal-container"
+            className="relative bg-[#0d121f] border border-white/10 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl z-10 font-sans"
+          >
+            {/* Warning Icon with pulse */}
+            <div className="mx-auto w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4">
+              <Users className="w-5 h-5 text-amber-400 animate-pulse" />
+            </div>
+
+            {/* Title */}
+            <h3 className="text-base font-sans font-black tracking-tight text-white mb-2 uppercase">
+              Account Required
+            </h3>
+
+            {/* Description */}
+            <p className="text-xs text-slate-300 leading-relaxed mb-6 font-medium">
+              You are currently trading in <span className="text-amber-400 font-extrabold font-mono">GUEST MODE</span>. 
+              Real account trading, live deposits, and interbank capital routing require a verified account portfolio.
+              <br /><br />
+              Please sign in or create an options account to access real balances.
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setGuestWarningModal(false);
+                  handleLogout();
+                }}
+                className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-sans font-black text-xs uppercase tracking-wider rounded-xl transition-all duration-200 shadow-[0_0_15px_rgba(59,130,246,0.2)] hover:scale-[1.02] active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>Sign In / Create Account</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGuestWarningModal(false)}
+                className="w-full py-2 bg-white/5 hover:bg-white/10 text-slate-300 font-sans font-bold text-xs uppercase tracking-wider rounded-xl transition-all duration-200 border border-white/5 active:scale-95 cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

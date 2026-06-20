@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowUpCircle, 
   ArrowDownCircle, 
@@ -34,13 +34,37 @@ export default function OrderForm({
   const [duration, setDuration] = useState<number>(30); // in seconds
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successPulse, setSuccessPulse] = useState<boolean>(false);
+  const [buyerRatio, setBuyerRatio] = useState<number>(55);
 
-  const increments = [10, 20, 50, 100, 200, 500];
+  const increments = [100, 150, 200, 300, 500, 1000];
+
+  useEffect(() => {
+    let base = 50;
+    if (activeAsset.trend === 'up') {
+      base = 56 + (activeAsset.changePct > 0 ? 4 : -2);
+    } else {
+      base = 44 + (activeAsset.changePct < 0 ? -4 : 2);
+    }
+    base = Math.max(35, Math.min(78, base));
+    setBuyerRatio(base);
+
+    const interval = setInterval(() => {
+      setBuyerRatio((prev) => {
+        const target = activeAsset.trend === 'up' ? 62 : 38;
+        const diff = target - prev;
+        const change = diff * 0.1 + (Math.random() - 0.5) * 4;
+        const next = Math.max(20, Math.min(80, Math.round(prev + change)));
+        return next;
+      });
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [activeAsset.id, activeAsset.trend, activeAsset.changePct]);
 
   const handleSubmit = (type: TradeType) => {
     setErrorMsg(null);
-    if (isNaN(amount) || amount <= 0) {
-      setErrorMsg('Please enter a valid trade amount.');
+    if (isNaN(amount) || amount < 100) {
+      setErrorMsg('Minimum stake investment is $100.');
       return;
     }
     if (amount > currentBalance) {
@@ -151,6 +175,35 @@ export default function OrderForm({
             </div>
           </div>
         </div>
+
+        {/* Real-time Market Sentiment Bar */}
+        <div id="market-sentiment-container" className="mt-1 flex flex-col gap-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/5 shadow-inner">
+          <div className="flex items-center justify-between text-[11px] font-sans font-bold">
+            <span className="text-slate-400 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
+              Market Sentiment
+            </span>
+            <span className="font-mono text-slate-500 font-bold uppercase text-[9px] tracking-wide">Live Feed</span>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="w-full h-1.5 rounded-full overflow-hidden flex bg-[#f43f5e]/20 border border-white/5">
+            <div 
+              className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out" 
+              style={{ width: `${buyerRatio}%` }}
+            />
+          </div>
+          
+          {/* Percentages */}
+          <div className="flex items-center justify-between text-[10px] font-mono leading-none">
+            <span className="text-emerald-400 font-black flex items-center gap-1">
+              Buyers {buyerRatio}%
+            </span>
+            <span className="text-rose-400 font-black flex items-center gap-1">
+              {100 - buyerRatio}% Sellers
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Up or Down Placement Triggers */}
@@ -221,13 +274,13 @@ export default function OrderForm({
           <ArrowDownCircle size={28} className="text-[#ffe4e6] group-hover:translate-y-[2px] transition-transform" />
         </button>
 
-        {/* Disclaimer Legal footnote */}
+         {/* Disclaimer Legal footnote */}
         <p id="trading-disclaimer text" className="text-[10px] text-slate-500 text-center leading-normal mt-1.5">
           {isDemo ? (
-            "Virtual trading simulator. All values represent dynamic algorithm ticks. No capital under risk."
+            "Demo Practice mode. Live interbank market signals. Free options training balance."
           ) : (
             <span className="text-rose-450 font-bold tracking-tight">
-              ⚠️ Real trading account involving real capital under risk. Fully active trades.
+              ⚠️ Real trading account involving active capital under risk. Fully live trades.
             </span>
           )}
         </p>

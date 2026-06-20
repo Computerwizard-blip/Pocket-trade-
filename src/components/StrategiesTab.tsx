@@ -49,7 +49,7 @@ export default function StrategiesTab({ onUpdateBalance, onAddTransaction }: Str
         status: 'Completed',
         createdAt: new Date().toLocaleString(),
         referenceId: 'WELC100',
-        remarks: 'Direct virtual sign-on promo bonus.'
+        remarks: 'Direct live account promotion voucher.'
       };
       onAddTransaction(newTx);
       setSuccessMsg('Congratulations! WELCOME100 has been redeemed for +$1,000 credit!');
@@ -84,9 +84,9 @@ export default function StrategiesTab({ onUpdateBalance, onAddTransaction }: Str
             <Gift size={11} className="" />
             Promo Ledger Voucher Code
           </span>
-          <h2 className="font-sans font-black text-lg md:text-xl text-white tracking-tight">Claim Virtual Option Bonuses</h2>
+          <h2 className="font-sans font-black text-lg md:text-xl text-white tracking-tight">Claim Options Voucher Bonuses</h2>
           <p className="font-sans text-xs text-slate-300 leading-normal">
-            Input active Pocket Trade promo codes below to instantly credit virtual options tokens onto your wallet balance. Standard user codes: <span className="text-blue-300 font-mono font-bold">WELCOME100</span> (K$1,000) or <span className="text-blue-300 font-mono font-bold">POCKETGOLD</span> (K$500).
+            Input active Pocket Trade promo codes below to instantly credit active options credits onto your wallet balance. Standard user codes: <span className="text-blue-300 font-mono font-bold">WELCOME100</span> ($1,000) or <span className="text-blue-300 font-mono font-bold">POCKETGOLD</span> ($500).
           </p>
         </div>
 

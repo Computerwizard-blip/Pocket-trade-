@@ -89,7 +89,7 @@ export default function Sidebar({ activeTab, setActiveTab, userProfile }: Sideba
                 <span id="demo-indicator" className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold uppercase ${
                   userProfile.isDemo ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'
                 }`}>
-                  {userProfile.isDemo ? 'DEMO' : 'REAL'}
+                  {userProfile.isDemo ? 'DEMO-BALANCE' : 'REAL-BALANCE'}
                 </span>
                 <span id="tier-indicator" className="text-[10px] font-mono font-medium flex items-center gap-1 text-cyan-400">
                   <Zap size={10} className="fill-cyan-400 text-cyan-400" />

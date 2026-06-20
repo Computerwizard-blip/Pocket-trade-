@@ -21,7 +21,8 @@ import {
   TrendingUp, 
   ShieldCheck,
   RefreshCw,
-  TrendingUpDown
+  TrendingUpDown,
+  User
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -32,6 +33,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   // Authentication states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [formMode, setFormMode] = useState<'signin' | 'signup'>('signin');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -77,6 +80,17 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       return;
     }
 
+    if (formMode === 'signup') {
+      if (!fullName.trim()) {
+        setErrorMsg('Please specify your Full Name.');
+        return;
+      }
+      if (!phoneNumber.trim()) {
+        setErrorMsg('Please specify your Phone Number.');
+        return;
+      }
+    }
+
     // Retrieve local simulated account registries
     const accountsData = localStorage.getItem('pocket_trade_accounts');
     let accountsList: any[] = [];
@@ -106,21 +120,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           setErrorMsg('Authentication failed: Incorrect password for this account. Please try again.');
         }
       } else {
-        // Account does not exist - invite them to create one instantly or Auto-Register them!
-        // "signing has to create accounts if user to login with the password" (User specified Auto-Creation on login attempt!)
-        const newAccount = {
-          email: trimmedEmail,
-          password: password,
-          demoBalance: 10000.00,
-          realBalance: 84.30 // Give them starting real balance as default
-        };
-        accountsList.push(newAccount);
-        localStorage.setItem('pocket_trade_accounts', JSON.stringify(accountsList));
-        
-        setSuccessMsg('New account created, simulated wallet provisioned! Entering lobby...');
-        setTimeout(() => {
-          onLogin(newAccount.email, true, { demo: 10000.00, real: 84.30 });
-        }, 1000);
+        setErrorMsg('No registered account was found with this email address. Please click the registration link below to register a new account.');
       }
     } else {
       // Explicit Sign Up
@@ -130,6 +130,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         const newAccount = {
           email: trimmedEmail,
           password: password,
+          fullName: fullName.trim(),
+          phoneNumber: phoneNumber.trim(),
           demoBalance: 10000.00,
           realBalance: 84.30
         };
@@ -196,11 +198,11 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             <h1 className="text-3xl md:text-5xl font-black font-sans leading-[1.1] tracking-tight text-white">
               The Aesthetic Way To <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-300">
-                Master Virtual Options
+                Master Live Options
               </span>
             </h1>
             <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
-              Experience binary options trading with split-second pricing, advanced indices, instant payouts, and zero financial risks on our professional-grade web suite.
+              Experience binary options trading with split-second pricing, competitive liquidity, instant payouts, and professional-grade order routing tools.
             </p>
           </div>
 
@@ -382,20 +384,20 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             <div className="absolute -top-12 -right-12 w-24 h-24 bg-blue-500/10 rounded-full blur-xl"></div>
             
             <div className="flex flex-col gap-1.5 mb-6 text-center lg:text-left">
-              <h2 className="text-xl md:text-2xl font-black tracking-tight text-white">
-                {formMode === 'signin' ? 'Sign In & Trade' : 'Open Live Trading Lobby'}
+              <h2 className="text-xl md:text-2xl font-black tracking-tight text-white animate-fade-in">
+                Create or Sign In & Trade
               </h2>
               <p className="text-xs text-slate-300">
                 {formMode === 'signin' 
-                  ? 'Input account details. If you are new, entering a password will register you instantly!'
-                  : 'Specify an active email address below to secure options ledger.'
+                  ? 'Sign in using your register email address and password.'
+                  : 'Register a live trading account to execute options directly.'
                 }
               </p>
             </div>
 
             {/* Error Indicators */}
             {errorMsg && (
-              <div className="mb-4 bg-rose-500/15 border border-rose-500/25 text-rose-300 rounded-xl p-3 text-xs flex items-start gap-2.5 leading-relaxed">
+              <div className="mb-4 bg-rose-500/15 border border-rose-500/25 text-rose-300 rounded-xl p-3 text-xs flex items-start gap-2.5 leading-relaxed animate-shake">
                 <AlertTriangle size={15} className="shrink-0 mt-0.5 text-rose-400" />
                 <span>{errorMsg}</span>
               </div>
@@ -412,6 +414,24 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             {/* Simulated Credentials form */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               
+              {/* Full Name Field (Explicit Sign-up Only) */}
+              {formMode === 'signup' && (
+                <div className="flex flex-col gap-2 transition-all duration-300">
+                  <label className="text-xs text-slate-400 font-mono tracking-wide uppercase">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/10 border border-white/10 focus:border-blue-500/50 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-slate-400 focus:outline-none transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Email Address Field */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs text-slate-400 font-mono tracking-wide uppercase">Email Address</label>
@@ -423,9 +443,28 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
                     className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/10 border border-white/10 focus:border-blue-500/50 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-slate-400 focus:outline-none transition-all"
+                    required
                   />
                 </div>
               </div>
+
+              {/* Phone Number Field (Explicit Sign-up Only) */}
+              {formMode === 'signup' && (
+                <div className="flex flex-col gap-2 transition-all duration-300">
+                  <label className="text-xs text-slate-400 font-mono tracking-wide uppercase">Phone Number</label>
+                  <div className="relative">
+                    <Smartphone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="e.g. +1 (555) 000-0000"
+                      className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/10 border border-white/10 focus:border-blue-500/50 rounded-xl pl-11 pr-4 py-3 text-xs text-white placeholder-slate-400 focus:outline-none transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Password credentials field */}
               <div className="flex flex-col gap-2">
@@ -441,6 +480,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter at least 5 characters"
                     className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/10 border border-white/10 focus:border-blue-500/50 rounded-xl pl-11 pr-11 py-3 text-xs text-white placeholder-slate-400 focus:outline-none transition-all"
+                    required
                   />
                   <button
                     type="button"
@@ -457,7 +497,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 type="submit"
                 className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-sans font-bold shadow-lg shadow-blue-500/10 active:scale-[0.99] transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2"
               >
-                <span>{formMode === 'signin' ? 'Sign In / Register Account' : 'Create Options Account'}</span>
+                <span>{formMode === 'signin' ? 'Sign In' : 'Register Account'}</span>
                 <ArrowRight size={14} />
               </button>
 
@@ -468,29 +508,55 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 <div className="flex-1 h-[1px] bg-white/5"></div>
               </div>
 
-              {/* One-click bypass sandbox to play instantly */}
+              {/* One-click bypass to trade instantly */}
               <button
                 type="button"
                 onClick={(e) => handleSubmit(e, true)}
                 className="w-full py-3 bg-white/5 hover:bg-white/10 text-cyan-300 hover:text-white border border-white/10 rounded-xl text-xs font-sans font-bold active:scale-[0.99] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Zap size={13} className="text-cyan-300 fill-cyan-400/14" />
-                <span>Play Immediate Demo (Guest Token)</span>
+                <span>Play Immediate Trade (Guest Token)</span>
               </button>
               
             </form>
 
             {/* Footer switcher */}
             <div className="mt-6 border-t border-white/5 pt-4 text-center">
-              <button
-                onClick={() => setFormMode(formMode === 'signin' ? 'signup' : 'signin')}
-                className="text-[11px] font-sans text-slate-400 hover:text-white"
-              >
-                {formMode === 'signin' 
-                  ? "Don't want to auto-sign in? Switch to custom registration"
-                  : 'Already possess an options passport? Switch to Sign In'
-                }
-              </button>
+              {formMode === 'signin' ? (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-[11px] font-sans text-slate-400">
+                    Not registered yet? Create a new account below:
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormMode('signup');
+                      setErrorMsg(null);
+                      setSuccessMsg(null);
+                    }}
+                    className="text-xs font-sans font-bold text-cyan-400 hover:text-cyan-300 underline underline-offset-4 cursor-pointer transition-all"
+                  >
+                    Create Options Account &rarr;
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-[11px] font-sans text-slate-400">
+                    Already possess a registered options account? Switch below:
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormMode('signin');
+                      setErrorMsg(null);
+                      setSuccessMsg(null);
+                    }}
+                    className="text-xs font-sans font-bold text-cyan-400 hover:text-cyan-300 underline underline-offset-4 cursor-pointer transition-all"
+                  >
+                    Sign In &rarr;
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -498,7 +564,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           <div className="bg-slate-950/40 border border-white/5 rounded-xl p-4 flex gap-3 text-[10px] text-slate-400 leading-normal font-sans">
             <ShieldCheck size={16} className="text-cyan-400 shrink-0 mt-0.5" />
             <span>
-              Disclaimer: PocketOption is a training simulator sandbox designed for financial derivatives education. No physical assets are traded and all currency indexes represent algorithm simulation runs.
+              Risk Disclosure: PocketOption is a high-yield online trading service. Trading financial derivatives is highly speculative and involves substantial risk of capital loss. All system pricing originates from active liquid interbank market streams.
             </span>
           </div>
 
@@ -509,7 +575,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       {/* Landing dynamic banner reviews showcase footer */}
       <footer id="landing-footer" className="border-t border-white/5 mt-auto bg-slate-950/20 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <span>© 2026 PocketOption Simulator Inc. Covered by Sandbox Security standards.</span>
+          <span>© 2026 PocketOption Inc. Covered by Secure Socket Layer (SSL) standards.</span>
           <div className="flex gap-4">
             <span className="hover:text-slate-400 cursor-pointer">Terms of Use</span>
             <span className="hover:text-slate-400 cursor-pointer">Privacy Protocol</span>

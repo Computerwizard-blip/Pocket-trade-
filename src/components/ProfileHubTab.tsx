@@ -54,6 +54,47 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+function Sparkline({ data }: { data: number[] }) {
+  if (!data || data.length === 0) return null;
+  const minVal = Math.min(...data);
+  const maxVal = Math.max(...data);
+  const range = maxVal - minVal || 1;
+  const svgWidth = 72;
+  const svgHeight = 24;
+  const pointsString = data.map((val, index) => {
+    const x = (index / (data.length - 1 || 1)) * svgWidth;
+    const y = svgHeight - 2 - ((val - minVal) / range) * (svgHeight - 4);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const isPositive = data[data.length - 1] >= 0;
+  const strokeColor = isPositive ? '#10b981' : '#f43f5e';
+  const fillColor = isPositive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)';
+  const areaPoints = `0,${svgHeight} ${pointsString} ${svgWidth},${svgHeight}`;
+
+  return (
+    <svg width={svgWidth} height={svgHeight} className="overflow-visible" style={{ minWidth: `${svgWidth}px` }}>
+      <polygon points={areaPoints} fill={fillColor} />
+      <polyline
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={pointsString}
+      />
+      <circle
+        cx={svgWidth}
+        cy={svgHeight - 2 - ((data[data.length - 1] - minVal) / range) * (svgHeight - 4)}
+        r="2"
+        fill="#ffffff"
+        stroke={strokeColor}
+        strokeWidth="1"
+      />
+    </svg>
+  );
+}
+
 interface ProfileHubTabProps {
   userProfile: {
     name: string;
@@ -243,7 +284,7 @@ export default function ProfileHubTab({
             <span className={`text-[10px] uppercase font-mono font-bold tracking-widest px-2.5 py-0.5 rounded-md ${
               isDemo ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-400'
             }`}>
-              DEMO PRACTICE
+              DEMO-BALANCE ACCOUNT
             </span>
             <span className="text-[10px] font-mono text-slate-500">100% Risk Free</span>
           </div>
@@ -298,7 +339,7 @@ export default function ProfileHubTab({
             <span className={`text-[10px] uppercase font-mono font-bold tracking-widest px-2.5 py-0.5 rounded-md ${
               !isDemo ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
             }`}>
-              REAL ACCOUNT
+              REAL-BALANCE ACCOUNT
             </span>
             <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-0.5">🚀 Live Market Trade</span>
           </div>
@@ -466,13 +507,23 @@ export default function ProfileHubTab({
               <span className="text-xs text-slate-400">Account session is encrypted with SHA-256 standard protocols.</span>
             </div>
             
-            <button
-              type="button"
-              onClick={onLogout}
-              className="text-xs text-red-400 hover:text-red-300 font-black font-sans px-3.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 shadow-sm cursor-pointer hover:bg-red-500/15 active:scale-95 transition-all flex items-center justify-center gap-1.5 shrink-0 self-end sm:self-auto"
-            >
-              <span>Log out of platform</span>
-            </button>
+            {userProfile.email === 'guest_trader@pocketoption.com' ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="text-xs text-blue-400 hover:text-blue-300 font-black font-sans px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 shadow-sm cursor-pointer hover:bg-blue-500/15 active:scale-95 transition-all flex items-center justify-center gap-1.5 shrink-0 self-end sm:self-auto"
+              >
+                <span>Sign in for real account</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="text-xs text-red-400 hover:text-red-300 font-black font-sans px-3.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 shadow-sm cursor-pointer hover:bg-red-500/15 active:scale-95 transition-all flex items-center justify-center gap-1.5 shrink-0 self-end sm:self-auto"
+              >
+                <span>Log out of platform</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -550,13 +601,18 @@ export default function ProfileHubTab({
             <h2 className="text-lg font-black text-white tracking-tight mt-1">7-Day Profit & Loss Ledger</h2>
           </div>
           
-          <div className="flex items-center gap-3 bg-white/5 border border-white/5 px-4 py-2.5 rounded-2xl self-start sm:self-auto shadow-inner">
-            <div className={`w-2 h-2 rounded-full ${total7DayProfit >= 0 ? 'bg-emerald-450 animate-pulse' : 'bg-rose-500 animate-pulse'}`}></div>
-            <div className="flex flex-col text-left">
-              <span className="text-[9px] text-slate-450 uppercase leading-none">7d Net Performance</span>
-              <span className={`text-sm font-sans font-black mt-1 leading-none ${total7DayProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {total7DayProfit >= 0 ? '+' : ''}${total7DayProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
+          <div className="flex items-center gap-4 bg-white/5 border border-white/5 px-4 py-2.5 rounded-2xl self-start sm:self-auto shadow-inner">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${total7DayProfit >= 0 ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500 animate-pulse'}`}></div>
+              <div className="flex flex-col text-left">
+                <span className="text-[9px] text-slate-450 uppercase leading-none font-bold">7d Net Performance</span>
+                <span className={`text-sm font-sans font-black mt-1 leading-none ${total7DayProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {total7DayProfit >= 0 ? '+' : ''}${total7DayProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+            <div className="border-l border-white/10 pl-3 flex items-center justify-center" title="Last 7 Days trend sparkline">
+              <Sparkline data={chartData.map(d => d.profit)} />
             </div>
           </div>
         </div>
