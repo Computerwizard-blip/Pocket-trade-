@@ -29,6 +29,8 @@ import {
   Search,
   Info,
   ArrowLeft,
+  Activity,
+  Eye,
 } from "lucide-react";
 
 import { Asset, Trade, EconomicEvent, TopTrader, Transaction } from "./types";
@@ -388,6 +390,7 @@ export default function App() {
 
   // Market live / lobby toggle and dynamic selector variables
   const [isMarketLiveMode, setIsMarketLiveMode] = useState<boolean>(true);
+  const [showActiveTradesDrawer, setShowActiveTradesDrawer] = useState<boolean>(false);
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedAssetCategory, setSelectedAssetCategory] =
@@ -1637,7 +1640,7 @@ export default function App() {
           </div>
 
           {/* Core full bleed chart view */}
-          <div className="flex-1 min-h-0 max-h-[43vh] relative flex flex-col">
+          <div className="flex-1 min-h-0 relative flex flex-col">
             <ChartArea
               activeAsset={activeAsset}
               activeTrades={activeTrades}
@@ -1774,6 +1777,141 @@ export default function App() {
                 </span>
               </button>
             </div>
+
+            {/* View Open Trades button below Buy and Sell */}
+            <button
+              onClick={() => setShowActiveTradesDrawer(true)}
+              className="w-full mt-1.5 py-2.5 bg-slate-900/90 active:bg-slate-800/90 hover:bg-slate-850 border border-white/10 rounded-full flex items-center justify-center gap-1.5 text-xs text-slate-300 font-sans font-black uppercase tracking-wider transition-all duration-200 shadow-lg active:scale-95 hover:scale-[1.01] cursor-pointer"
+            >
+              <Activity size={12} className="text-amber-400" />
+              <span>View Open Trades ({activeTrades.length})</span>
+            </button>
+
+            {/* Slide-Up Bottom Drawer for Active Trades */}
+            {showActiveTradesDrawer && (
+              <div className="absolute inset-x-0 bottom-0 top-0 z-[10000] flex flex-col justify-end">
+                {/* Dark blur overlay */}
+                <div
+                  className="absolute inset-0 bg-black/65 backdrop-blur-xs transition-opacity duration-300"
+                  onClick={() => setShowActiveTradesDrawer(false)}
+                />
+
+                {/* Drawer Content Card */}
+                <div className="relative bg-[#090b12] border-t border-white/15 rounded-t-3xl shadow-2xl p-4 flex flex-col max-h-[85vh] w-full z-10 animate-fade-in divide-y divide-white/5 font-sans">
+                  {/* Pull utility handle */}
+                  <div className="w-12 h-1.5 bg-white/15 rounded-full mx-auto mb-3" />
+
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-3">
+                    <div className="flex items-center gap-2">
+                      <Activity size={14} className="text-blue-400" />
+                      <h3 className="text-xs font-sans font-black text-white uppercase tracking-wider">
+                        Active Trades ({activeTrades.length})
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowActiveTradesDrawer(false)}
+                      className="w-6 h-6 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition-all cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+
+                  {/* List of active trades */}
+                  <div className="flex-1 overflow-y-auto no-scrollbar space-y-2.5 pt-3 max-h-[50vh]">
+                    {activeTrades.length === 0 ? (
+                      <div className="py-12 flex flex-col items-center justify-center text-center px-4">
+                        <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-slate-500 mb-3">
+                          <Eye size={16} className="text-slate-400/50" />
+                        </div>
+                        <p className="text-xs text-slate-400 font-sans max-w-[200px]">
+                          No open trades right now. Place a BUY/SELL option above to start.
+                        </p>
+                      </div>
+                    ) : (
+                      activeTrades.map((trade) => {
+                        const remainingSecs = Math.max(
+                          0,
+                          Math.ceil((trade.expiresAt - Date.now()) / 1000)
+                        );
+                        // Find current price matching this asset
+                        const matchedAsset = assets.find((a) => a.id === trade.assetId);
+                        const curPrice = matchedAsset ? matchedAsset.currentPrice : trade.strikePrice;
+
+                        const isWinning =
+                          trade.type === "up"
+                            ? curPrice > trade.strikePrice
+                            : curPrice < trade.strikePrice;
+
+                        return (
+                          <div
+                            key={trade.id}
+                            className={`border rounded-xl p-3 flex flex-col gap-2 transition-all ${
+                              isWinning
+                                ? "bg-emerald-950/15 border-emerald-500/20"
+                                : "bg-rose-950/15 border-rose-500/10"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded leading-none ${
+                                  trade.type === "up"
+                                    ? "bg-emerald-500/20 text-[#34d399]"
+                                    : "bg-rose-500/20 text-[#f43f5e]"
+                                }`}>
+                                  {trade.type === "up" ? "BUY ↑" : "SELL ↓"}
+                                </span>
+                                <span className="text-xs font-sans font-extrabold text-white">
+                                  {trade.assetName}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1 text-[10px] font-mono">
+                                <Clock size={10} className="text-amber-400" />
+                                <span className="text-amber-300 font-bold">{remainingSecs}s left</span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 py-1.5 border-y border-white/5 text-[10px] font-mono">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-slate-500 text-[8px] uppercase font-sans font-semibold">Strike Price</span>
+                                <span className="text-slate-200 font-bold">
+                                  ${trade.strikePrice.toLocaleString(undefined, { minimumFractionDigits: 5 })}
+                                </span>
+                              </div>
+                              <div className="flex flex-col gap-0.5 text-right">
+                                <span className="text-slate-500 text-[8px] uppercase font-sans font-semibold">Current Price</span>
+                                <span className={`font-black ${isWinning ? "text-emerald-400" : "text-rose-400"}`}>
+                                  ${curPrice.toLocaleString(undefined, { minimumFractionDigits: 5 })}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[10px] leading-none mt-0.5">
+                              <div>
+                                <span className="text-slate-400 font-sans">Amount:</span>{" "}
+                                <span className="font-mono font-black text-amber-400">
+                                  kS{trade.amount}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 font-sans">Expected payout:</span>{" "}
+                                <span className={`font-mono font-black ${
+                                  isWinning ? "text-[#34d399] animate-pulse" : "text-slate-500"
+                                }`}>
+                                  {isWinning ? `+kS${trade.potentialPayout.toFixed(1)}` : "kS0.0"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
